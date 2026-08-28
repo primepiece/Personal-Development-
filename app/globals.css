@@ -75,6 +75,19 @@ body {
   color: var(--ink);
 }
 
+/* Shared form primitives — goal/vision/standard forms across M1 reuse these. */
+.field-label {
+  @apply font-mono text-[11px] uppercase tracking-[0.08em] text-ink-faint;
+}
+
+.field-input {
+  @apply rounded-sm border border-line bg-surface-raised px-3 py-2 text-[14px] text-ink outline-none;
+}
+
+.field-input:focus-visible {
+  @apply border-accent;
+}
+
 ::selection {
   background: var(--accent-soft);
   color: var(--ink);

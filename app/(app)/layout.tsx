@@ -1,5 +1,9 @@
 import { PrimeNav } from "@/components/nav/prime-nav";
 
+// Every page in here reads live, per-user data behind auth — never
+// prerender or cache it statically.
+export const dynamic = "force-dynamic";
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="mx-auto flex min-h-screen max-w-[1180px] md:grid md:grid-cols-[236px_1fr]">

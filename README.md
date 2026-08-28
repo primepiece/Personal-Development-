@@ -4,10 +4,14 @@ A personal operating system, not a habit tracker. See the architecture doc
 for the full product design, data model, AI architecture and milestone plan
 this repo is being built against.
 
-## Current milestone: M0 — foundation
+## Current milestone: M0 + M1 — foundation, Vision → Standards → Goals
 
-Scaffold, design tokens, navigation shell, and auth wiring only. No goal
-logic, no scoring, no AI yet — that starts at M1.
+No scoring, no AI, no Today/Trajectory/Timeline/Coach content yet — those
+are M2 onward. What's here has been verified end-to-end against a real
+local Postgres (schema push, seed, a full Vision → Standard →
+Milestone(age 25) → Annual → Quarterly → Monthly → Weekly chain, and the
+"why am I doing this?" upward trace) — it just hasn't touched *your*
+database yet, because only you can create the Supabase project.
 
 - **Nav:** `Prime` (home) · `Today` · `Goals` · `Trajectory` · `Timeline` ·
   `Coach` — desktop left rail, mobile bottom bar (see
@@ -15,12 +19,25 @@ logic, no scoring, no AI yet — that starts at M1.
 - **Design tokens:** `app/globals.css` — warm graphite ink, a single brass
   accent, steel-blue as the only secondary hue. Fraunces (display) / IBM
   Plex Sans (body) / IBM Plex Mono (data, schema-shaped text).
-- **Auth:** Supabase email magic-link, session refreshed in
-  `middleware.ts`. Every route except `/login` and `/auth/callback`
-  requires a signed-in user.
-- **Data:** Drizzle ORM against Supabase Postgres. Only `life_categories`
-  exists so far, seeded with the seven pillars — the full schema (Vision,
-  Goals, Daily, Scoring, Coach, Trajectory, Timeline) lands in M1–M8.
+- **Auth:** Supabase email magic-link, session refreshed in `proxy.ts`.
+  Every route except `/login` and `/auth/callback` requires a signed-in
+  user.
+- **Data:** Drizzle ORM against Supabase Postgres.
+  - `life_categories` — the seven pillars. `id`/`slug` are immutable,
+    `name` is the only mutable field, retirement is `is_active = false`
+    (never a delete).
+  - `vision_entries` (+ `vision_entry_history`) — one current Vision per
+    pillar, edits snapshotted before they overwrite.
+  - `standards` — standing rules per pillar, separate from goals.
+  - `goals` (+ `goal_history`, `goal_recurrence`, `behavior_completions`)
+    — the cascade: `milestone` (optionally age-anchored) → `annual` →
+    `quarterly` → `monthly` → `weekly`. `kind = 'behavior'` goals carry a
+    recurrence shape; the completion log and adherence math ship with
+    Today in M2.
+  - Scoring, Trajectory, Timeline and Coach tables land in M3–M8.
+- **`/goals`** is both the first real feature and M0's database
+  verification in one place: once you're signed in against your own
+  Supabase project, it reads the seven pillars live from Postgres.
 
 ## One-time setup (do this once, outside of this session)
 
