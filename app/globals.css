@@ -1,94 +1,114 @@
 @import "tailwindcss";
 
 /*
-  Prime James design tokens.
-  Mirrors the palette agreed in the architecture doc: warm graphite ink,
-  a single restrained brass accent, steel-blue as the only secondary hue,
-  and semantic green/rust kept out of the accent's way.
+  Prime James design tokens — black / teal / white.
+
+  A deliberate, single dark identity (not a light/dark toggle): a premium
+  performance operating system, not a wellness app. Tokens are semantic
+  so exact shades can be refined later without touching component code —
+  every component reaches for --color-surface or --color-text-secondary,
+  never a literal hex value.
+
+  Contrast was checked, not eyeballed: text-primary/secondary/faint each
+  clear WCAG AA (4.5:1) against every surface tier; accent clears AA on
+  its own and text-on-accent clears 6.5:1 sitting on the accent fill.
 */
 
 :root {
-  --bg: #f1efe9;
-  --bg-raised: #fbfaf7;
-  --bg-sunken: #e8e5dc;
-  --ink: #171813;
-  --ink-soft: #514f45;
-  --ink-faint: #8b8878;
-  --line: #ddd9cc;
-  --line-strong: #c7c2b0;
-  --accent: #8a6a2f;
-  --accent-soft: #ede1c7;
-  --info: #3e5c74;
-  --info-soft: #dee7ec;
-  --good: #4b6b4e;
-  --good-soft: #e1e9de;
-  --warn: #a6522b;
-  --warn-soft: #f2e1d6;
-}
+  /* Elevation — background < surface-sunken < surface < surface-raised */
+  --background: #0a0d0e;
+  --surface-sunken: #0d1113;
+  --surface: #12171a;
+  --surface-raised: #181f23;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #131309;
-    --bg-raised: #1b1b12;
-    --bg-sunken: #0e0e08;
-    --ink: #eeeae0;
-    --ink-soft: #b4af9c;
-    --ink-faint: #7d7a69;
-    --line: #33321f;
-    --line-strong: #45441f;
-    --accent: #d3b171;
-    --accent-soft: #3a311a;
-    --info: #8fb1c8;
-    --info-soft: #1e2b34;
-    --good: #8fb093;
-    --good-soft: #1f2a20;
-    --warn: #d08a64;
-    --warn-soft: #33221a;
-  }
+  /* Structure */
+  --border: #1e262a;
+  --border-strong: #5e7180;
+
+  /* Text */
+  --text-primary: #ecf1f2;
+  --text-secondary: #93a1a5;
+  --text-faint: #7b8a8e;
+  --text-on-accent: #04211c;
+
+  /* Accent — the one deliberate colour. Active nav, key CTAs, progress,
+     selected states, positive trajectory. Not borders, not icons, not
+     every card. */
+  --accent: #2bb3a0;
+  --accent-strong: #3fcdb8;
+  --accent-muted: #123330;
+
+  /* Status */
+  --positive: #4fae83;
+  --positive-muted: #12261d;
+  --warning: #cc9b55;
+  --warning-muted: #2e2416;
+  --danger: #d97066;
+  --danger-muted: #2a1613;
 }
 
 @theme inline {
-  --color-surface: var(--bg);
-  --color-surface-raised: var(--bg-raised);
-  --color-surface-sunken: var(--bg-sunken);
-  --color-ink: var(--ink);
-  --color-ink-soft: var(--ink-soft);
-  --color-ink-faint: var(--ink-faint);
-  --color-line: var(--line);
-  --color-line-strong: var(--line-strong);
+  --color-background: var(--background);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-faint: var(--text-faint);
+  --color-text-on-accent: var(--text-on-accent);
+
   --color-accent: var(--accent);
-  --color-accent-soft: var(--accent-soft);
-  --color-info: var(--info);
-  --color-info-soft: var(--info-soft);
-  --color-good: var(--good);
-  --color-good-soft: var(--good-soft);
-  --color-warn: var(--warn);
-  --color-warn-soft: var(--warn-soft);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-muted: var(--accent-muted);
+
+  --color-positive: var(--positive);
+  --color-positive-muted: var(--positive-muted);
+  --color-warning: var(--warning);
+  --color-warning-muted: var(--warning-muted);
+  --color-danger: var(--danger);
+  --color-danger-muted: var(--danger-muted);
 
   --font-display: var(--font-fraunces);
   --font-sans: var(--font-plex-sans);
   --font-mono: var(--font-plex-mono);
 }
 
-body {
-  background: var(--bg);
-  color: var(--ink);
+html {
+  color-scheme: dark;
 }
 
-/* Shared form primitives — goal/vision/standard forms across M1 reuse these. */
+body {
+  background: var(--background);
+  color: var(--text-primary);
+}
+
+/* Shared form primitives — goal/vision/standard/action forms all reuse these. */
 .field-label {
-  @apply font-mono text-[11px] uppercase tracking-[0.08em] text-ink-faint;
+  @apply font-mono text-[11px] uppercase tracking-[0.08em] text-text-faint;
 }
 
 .field-input {
-  @apply rounded-sm border border-line bg-surface-raised px-3 py-2 text-[14px] text-ink outline-none;
+  @apply rounded-sm border border-border bg-surface-raised px-3 py-2 text-[14px] text-text-primary outline-none;
 }
 
 .field-input:focus-visible {
   @apply border-accent;
 }
 
+/* The one primary-button style — reserved for a section's single commit action. */
+.btn-primary {
+  @apply rounded-sm bg-accent px-4 py-2 text-[13px] font-medium text-text-on-accent;
+}
+
+.btn-primary:hover {
+  @apply bg-accent-strong;
+}
+
 ::selection {
-  background: var(--accent-soft);
-  color: var(--ink);
+  background: var(--accent-muted);
+  color: var(--text-primary);
 }

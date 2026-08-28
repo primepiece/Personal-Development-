@@ -14,7 +14,7 @@ export type RecurringGoal = {
 
 export function RecurringSection({ goals }: { goals: RecurringGoal[] }) {
   if (goals.length === 0) {
-    return <p className="text-[13.5px] text-ink-faint">No recurring commitments yet.</p>;
+    return <p className="text-[13.5px] text-text-faint">No recurring commitments yet.</p>;
   }
 
   return (
@@ -22,13 +22,13 @@ export function RecurringSection({ goals }: { goals: RecurringGoal[] }) {
       {goals.map((goal) => (
         <li
           key={goal.id}
-          className="flex items-center justify-between gap-4 rounded-sm border border-line bg-surface-raised px-4 py-3"
+          className="flex items-center justify-between gap-4 rounded-sm border border-border bg-surface px-4 py-3"
         >
           <div className="min-w-0">
-            <Link href={`/goals`} className="text-[14px] text-ink hover:text-accent">
+            <Link href={`/goals`} className="text-[14px] text-text-primary hover:text-accent">
               {goal.title}
             </Link>
-            <p className="mt-1 flex flex-wrap gap-x-2 font-mono text-[11px] text-ink-soft">
+            <p className="mt-1 flex flex-wrap gap-x-2 font-mono text-[11px] text-text-secondary">
               <span>{goal.categoryName}</span>
               <span>
                 · {goal.report.current.count}/{goal.targetFrequency} this {goal.period}
@@ -37,7 +37,7 @@ export function RecurringSection({ goals }: { goals: RecurringGoal[] }) {
                 <span className="text-accent">· {goal.report.streak} streak</span>
               )}
               {goal.report.missedPeriods > 0 && (
-                <span className="text-warn">· {goal.report.missedPeriods} missed</span>
+                <span className="text-warning">· {goal.report.missedPeriods} missed</span>
               )}
             </p>
           </div>
@@ -47,8 +47,8 @@ export function RecurringSection({ goals }: { goals: RecurringGoal[] }) {
               type="submit"
               className={`shrink-0 rounded-sm border px-3 py-1.5 font-mono text-[11px] ${
                 goal.doneToday
-                  ? "border-good bg-good text-surface"
-                  : "border-line-strong text-ink"
+                  ? "border-positive bg-positive text-text-on-accent"
+                  : "border-border-strong text-text-primary"
               }`}
             >
               {goal.doneToday ? "done today" : "log today"}

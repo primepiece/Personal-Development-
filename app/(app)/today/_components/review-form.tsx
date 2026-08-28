@@ -45,7 +45,7 @@ export function ReviewForm({ review }: { review: Review | undefined }) {
 
       <button
         type="submit"
-        className="self-start rounded-sm bg-ink px-4 py-2 text-[13px] font-medium text-surface"
+        className="btn-primary self-start"
       >
         {review ? "Update review" : "Save review"}
       </button>

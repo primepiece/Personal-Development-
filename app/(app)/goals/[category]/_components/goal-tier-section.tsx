@@ -19,12 +19,12 @@ export function GoalTierSection({
   parentOptions: GoalRow[];
 }) {
   return (
-    <div className="border-t border-line py-8 first:border-t-0 first:pt-0">
+    <div className="border-t border-border py-8 first:border-t-0 first:pt-0">
       <div className="flex items-baseline justify-between">
-        <h3 className="font-display text-lg font-semibold text-ink">
+        <h3 className="font-display text-lg font-semibold text-text-primary">
           {TIER_LABEL[tier]}
         </h3>
-        <span className="font-mono text-[11px] text-ink-faint">
+        <span className="font-mono text-[11px] text-text-faint">
           {goalsInTier.length}
         </span>
       </div>
@@ -35,9 +35,9 @@ export function GoalTierSection({
             <li key={goal.id}>
               <Link
                 href={`/goals/${categorySlug}/g/${goal.id}`}
-                className="flex items-center justify-between gap-4 rounded-sm border border-line bg-surface-raised px-3 py-2.5 hover:border-line-strong"
+                className="flex items-center justify-between gap-4 rounded-sm border border-border bg-surface px-3 py-2.5 hover:border-border-strong"
               >
-                <span className="text-[14px] text-ink">
+                <span className="text-[14px] text-text-primary">
                   {goal.title}
                   {goal.milestoneAge && (
                     <span className="ml-2 font-mono text-[11px] text-accent">
@@ -45,7 +45,7 @@ export function GoalTierSection({
                     </span>
                   )}
                 </span>
-                <span className="shrink-0 font-mono text-[11px] text-ink-soft">
+                <span className="shrink-0 font-mono text-[11px] text-text-secondary">
                   {goal.kind === "behavior" ? "behavior" : "outcome"} · P{goal.priority}
                 </span>
               </Link>
@@ -55,12 +55,12 @@ export function GoalTierSection({
       )}
 
       <details className="mt-4 group">
-        <summary className="cursor-pointer font-mono text-[11px] uppercase tracking-[0.08em] text-ink-faint">
+        <summary className="cursor-pointer font-mono text-[11px] uppercase tracking-[0.08em] text-text-faint">
           + add {tier} goal
         </summary>
         <form
           action={createGoalAction}
-          className="mt-3 grid grid-cols-1 gap-3 rounded-sm border border-line bg-surface-raised p-4 sm:grid-cols-2"
+          className="mt-3 grid grid-cols-1 gap-3 rounded-sm border border-border bg-surface p-4 sm:grid-cols-2"
         >
           <input type="hidden" name="categoryId" value={categoryId} />
           <input type="hidden" name="tier" value={tier} />
@@ -91,7 +91,7 @@ export function GoalTierSection({
                 ))}
               </select>
               {parentOptions.length === 0 && (
-                <span className="text-[12px] text-warn">
+                <span className="text-[12px] text-warning">
                   No {parentTier} goals in this pillar yet — add one first.
                 </span>
               )}
@@ -150,7 +150,7 @@ export function GoalTierSection({
             <textarea name="description" rows={2} className="field-input resize-y" />
           </label>
 
-          <fieldset className="flex flex-col gap-1 sm:col-span-2 rounded-sm border border-line-strong p-3">
+          <fieldset className="flex flex-col gap-1 sm:col-span-2 rounded-sm border border-border-strong p-3">
             <legend className="field-label px-1">Only used if kind = Behavior</legend>
             <div className="grid grid-cols-2 gap-3">
               <label className="flex flex-col gap-1">
@@ -170,7 +170,7 @@ export function GoalTierSection({
 
           <button
             type="submit"
-            className="self-start rounded-sm bg-ink px-4 py-2 text-[13px] font-medium text-surface sm:col-span-2"
+            className="btn-primary self-start sm:col-span-2"
           >
             Create {TIER_LABEL[tier]} goal
           </button>

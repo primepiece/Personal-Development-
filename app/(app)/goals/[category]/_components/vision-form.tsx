@@ -54,7 +54,7 @@ export function VisionForm({
       <input type="hidden" name="categoryId" value={categoryId} />
       {FIELDS.map((field) => (
         <label key={field.key} className="flex flex-col gap-1.5">
-          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-ink-faint">
+          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-text-faint">
             {field.label}
           </span>
           <textarea
@@ -62,13 +62,13 @@ export function VisionForm({
             defaultValue={vision?.[field.key] ?? ""}
             placeholder={field.placeholder}
             rows={2}
-            className="resize-y rounded-sm border border-line bg-surface-raised px-3 py-2 text-[14px] text-ink outline-none focus-visible:border-accent"
+            className="field-input resize-y"
           />
         </label>
       ))}
       <button
         type="submit"
-        className="self-start rounded-sm bg-ink px-4 py-2 text-[13px] font-medium text-surface"
+        className="btn-primary self-start"
       >
         Save Vision
       </button>

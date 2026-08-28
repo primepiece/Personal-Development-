@@ -41,13 +41,13 @@ export function PrimeActions({
   return (
     <div>
       {actions.length === 0 ? (
-        <p className="text-[13.5px] text-ink-faint">Nothing picked yet — what matters today?</p>
+        <p className="text-[13.5px] text-text-faint">Nothing picked yet — what matters today?</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {actions.map((action) => (
             <li
               key={action.id}
-              className="flex items-start justify-between gap-4 rounded-sm border border-line bg-surface-raised px-4 py-3"
+              className="flex items-start justify-between gap-4 rounded-sm border border-border bg-surface px-4 py-3"
             >
               <form action={toggleActionStatusAction} className="mt-0.5">
                 <input type="hidden" name="actionId" value={action.id} />
@@ -56,8 +56,8 @@ export function PrimeActions({
                   aria-label={action.status === "done" ? "Mark not done" : "Mark done"}
                   className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-sm border text-[11px] ${
                     action.status === "done"
-                      ? "border-good bg-good text-surface"
-                      : "border-line-strong text-transparent"
+                      ? "border-positive bg-positive text-text-on-accent"
+                      : "border-border-strong text-transparent"
                   }`}
                 >
                   ✓
@@ -68,15 +68,15 @@ export function PrimeActions({
                 <Link
                   href={`/today/a/${action.id}`}
                   className={`text-[14.5px] ${
-                    action.status === "done" ? "text-ink-faint line-through" : "text-ink"
+                    action.status === "done" ? "text-text-faint line-through" : "text-text-primary"
                   } hover:text-accent`}
                 >
                   {action.title}
                 </Link>
-                <p className="mt-1 flex flex-wrap gap-x-2 font-mono text-[11px] text-ink-soft">
+                <p className="mt-1 flex flex-wrap gap-x-2 font-mono text-[11px] text-text-secondary">
                   <span>{action.categoryName}</span>
                   {action.linkedGoalTitle && <span>· {action.linkedGoalTitle}</span>}
-                  {action.isStandalone && <span className="text-warn">· standalone</span>}
+                  {action.isStandalone && <span className="text-warning">· standalone</span>}
                   {action.ventureName && <span>· {action.ventureName}</span>}
                   <span>· P{action.priority}</span>
                   {action.source === "suggested" && <span>· suggested</span>}
@@ -86,7 +86,7 @@ export function PrimeActions({
               {action.status === "pending" && (
                 <form action={removeActionAction}>
                   <input type="hidden" name="actionId" value={action.id} />
-                  <button type="submit" className="font-mono text-[11px] text-ink-faint hover:text-warn">
+                  <button type="submit" className="font-mono text-[11px] text-text-faint hover:text-warning">
                     remove
                   </button>
                 </form>
@@ -97,17 +97,17 @@ export function PrimeActions({
       )}
 
       {full ? (
-        <p className="mt-4 font-mono text-[12px] text-ink-faint">
+        <p className="mt-4 font-mono text-[12px] text-text-faint">
           Today&apos;s five Prime Actions are set. Remove one to swap it out.
         </p>
       ) : (
         <details className="mt-4">
-          <summary className="cursor-pointer font-mono text-[11px] uppercase tracking-[0.08em] text-ink-faint">
+          <summary className="cursor-pointer font-mono text-[11px] uppercase tracking-[0.08em] text-text-faint">
             + add a Prime Action ({5 - actions.length} left)
           </summary>
           <form
             action={createDailyActionAction}
-            className="mt-3 grid grid-cols-1 gap-3 rounded-sm border border-line bg-surface-raised p-4 sm:grid-cols-2"
+            className="mt-3 grid grid-cols-1 gap-3 rounded-sm border border-border bg-surface p-4 sm:grid-cols-2"
           >
             <label className="flex flex-col gap-1 sm:col-span-2">
               <span className="field-label">Title</span>
@@ -126,7 +126,7 @@ export function PrimeActions({
               </select>
             </label>
 
-            <label className="flex items-center gap-2 sm:col-span-2 text-[13px] text-ink-soft">
+            <label className="flex items-center gap-2 sm:col-span-2 text-[13px] text-text-secondary">
               <input type="checkbox" name="isStandalone" />
               This is standalone — not linked to any goal (must be intentional, not a default)
             </label>
@@ -161,7 +161,7 @@ export function PrimeActions({
 
             <button
               type="submit"
-              className="self-start rounded-sm bg-ink px-4 py-2 text-[13px] font-medium text-surface sm:col-span-2"
+              className="btn-primary self-start sm:col-span-2"
             >
               Add
             </button>

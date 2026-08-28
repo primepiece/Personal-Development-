@@ -47,15 +47,15 @@ export default async function CategoryPage({
 
   return (
     <div className="px-6 py-10 md:px-12 md:py-14">
-      <Link href="/goals" className="font-mono text-[11px] text-ink-faint hover:text-ink">
+      <Link href="/goals" className="font-mono text-[11px] text-text-faint hover:text-text-primary">
         ← All pillars
       </Link>
-      <h1 className="mt-3 font-display text-3xl font-semibold text-ink md:text-4xl">
+      <h1 className="mt-3 font-display text-3xl font-semibold text-text-primary md:text-4xl">
         {category.name}
       </h1>
 
       <section className="mt-10">
-        <h2 className="font-mono text-[11px] uppercase tracking-[0.1em] text-ink-faint">
+        <h2 className="font-mono text-[11px] uppercase tracking-[0.1em] text-text-faint">
           Vision
         </h2>
         <div className="mt-4">
@@ -64,7 +64,7 @@ export default async function CategoryPage({
       </section>
 
       <section className="mt-12">
-        <h2 className="font-mono text-[11px] uppercase tracking-[0.1em] text-ink-faint">
+        <h2 className="font-mono text-[11px] uppercase tracking-[0.1em] text-text-faint">
           Standards
         </h2>
         <div className="mt-4">
@@ -73,7 +73,7 @@ export default async function CategoryPage({
       </section>
 
       <section className="mt-12">
-        <h2 className="font-mono text-[11px] uppercase tracking-[0.1em] text-ink-faint">
+        <h2 className="font-mono text-[11px] uppercase tracking-[0.1em] text-text-faint">
           Goals
         </h2>
         <div className="mt-2">

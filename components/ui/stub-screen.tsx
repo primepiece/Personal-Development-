@@ -12,16 +12,16 @@ type StubScreenProps = {
 export function StubScreen({ eyebrow, title, ships, description }: StubScreenProps) {
   return (
     <div className="px-6 py-10 md:px-12 md:py-14">
-      <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-ink-faint">
+      <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-text-faint">
         {eyebrow}
       </p>
-      <h1 className="mt-2 font-display text-3xl font-semibold text-ink md:text-4xl">
+      <h1 className="mt-2 font-display text-3xl font-semibold text-text-primary md:text-4xl">
         {title}
       </h1>
-      <p className="mt-4 max-w-[60ch] text-[15px] leading-relaxed text-ink-soft">
+      <p className="mt-4 max-w-[60ch] text-[15px] leading-relaxed text-text-secondary">
         {description}
       </p>
-      <div className="mt-8 inline-block rounded-sm border border-line bg-surface-raised px-4 py-3 font-mono text-[12px] text-ink-faint">
+      <div className="mt-8 inline-block rounded-sm border border-border bg-surface px-4 py-3 font-mono text-[12px] text-text-faint">
         ships in {ships}
       </div>
     </div>

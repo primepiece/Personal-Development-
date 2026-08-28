@@ -22,13 +22,13 @@ export function DailySummaryPanel({ summary }: { summary: DailySummary }) {
   }
 
   return (
-    <div className="rounded-sm border border-line bg-surface-sunken px-5 py-4">
-      <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-ink-faint">
+    <div className="rounded-sm border border-border bg-surface-sunken px-5 py-4">
+      <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-text-faint">
         Today so far — computed, not written
       </p>
       <ul className="mt-3 flex flex-col gap-1.5">
         {lines.map((line, i) => (
-          <li key={i} className="font-mono text-[13px] text-ink-soft">
+          <li key={i} className="font-mono text-[13px] text-text-secondary">
             {line}
           </li>
         ))}

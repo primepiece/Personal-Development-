@@ -48,24 +48,24 @@ export default async function GoalDetailPage({
     <div className="px-6 py-10 md:px-12 md:py-14">
       <Link
         href={`/goals/${slug}`}
-        className="font-mono text-[11px] text-ink-faint hover:text-ink"
+        className="font-mono text-[11px] text-text-faint hover:text-text-primary"
       >
         ← {category?.name ?? "Pillar"}
       </Link>
 
       <nav aria-label="Lineage" className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1">
-        <span className="font-mono text-[11.5px] text-ink-faint">Vision</span>
+        <span className="font-mono text-[11.5px] text-text-faint">Vision</span>
         {chain.map((step) => (
           <span key={step.id} className="flex items-center gap-2">
-            <span className="text-ink-faint">→</span>
+            <span className="text-text-faint">→</span>
             {step.id === goal.id ? (
-              <span className="font-mono text-[11.5px] font-semibold text-ink">
+              <span className="font-mono text-[11.5px] font-semibold text-text-primary">
                 {TIER_LABEL[step.tier as GoalTier]}
               </span>
             ) : (
               <Link
                 href={`/goals/${slug}/g/${step.id}`}
-                className="font-mono text-[11.5px] text-ink-faint hover:text-ink"
+                className="font-mono text-[11.5px] text-text-faint hover:text-text-primary"
               >
                 {TIER_LABEL[step.tier as GoalTier]}
               </Link>
@@ -74,15 +74,15 @@ export default async function GoalDetailPage({
         ))}
       </nav>
 
-      <h1 className="mt-4 font-display text-3xl font-semibold text-ink md:text-4xl">
+      <h1 className="mt-4 font-display text-3xl font-semibold text-text-primary md:text-4xl">
         {goal.title}
       </h1>
 
-      <div className="mt-6 max-w-[62ch] rounded-sm border border-line bg-surface-raised px-5 py-4">
-        <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-ink-faint">
+      <div className="mt-6 max-w-[62ch] rounded-sm border border-border bg-surface px-5 py-4">
+        <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-text-faint">
           Why am I doing this?
         </p>
-        <p className="mt-2 text-[14.5px] leading-relaxed text-ink-soft">
+        <p className="mt-2 text-[14.5px] leading-relaxed text-text-secondary">
           {vision?.whyItMatters ||
             `No Vision written yet for ${category?.name ?? "this pillar"} — write one to answer this properly.`}
         </p>
@@ -107,23 +107,23 @@ export default async function GoalDetailPage({
       </dl>
 
       {goal.description && (
-        <p className="mt-6 max-w-[62ch] text-[14.5px] leading-relaxed text-ink-soft">
+        <p className="mt-6 max-w-[62ch] text-[14.5px] leading-relaxed text-text-secondary">
           {goal.description}
         </p>
       )}
 
       <section className="mt-12">
-        <h2 className="font-mono text-[11px] uppercase tracking-[0.1em] text-ink-faint">
+        <h2 className="font-mono text-[11px] uppercase tracking-[0.1em] text-text-faint">
           {goal.tier === "weekly" ? "Daily actions" : "What this breaks down into"}
         </h2>
 
         {goal.tier === "weekly" ? (
-          <p className="mt-3 text-[13.5px] text-ink-faint">
+          <p className="mt-3 text-[13.5px] text-text-faint">
             Weekly is as deep as the cascade goes for now — Today (M2) will let daily
             actions link up to a weekly goal like this one.
           </p>
         ) : children.length === 0 ? (
-          <p className="mt-3 text-[13.5px] text-ink-faint">
+          <p className="mt-3 text-[13.5px] text-text-faint">
             Nothing under this goal yet — add one from the pillar page.
           </p>
         ) : (
@@ -132,7 +132,7 @@ export default async function GoalDetailPage({
               <li key={child.id}>
                 <Link
                   href={`/goals/${slug}/g/${child.id}`}
-                  className="block rounded-sm border border-line bg-surface-raised px-3 py-2.5 text-[14px] text-ink hover:border-line-strong"
+                  className="block rounded-sm border border-border bg-surface px-3 py-2.5 text-[14px] text-text-primary hover:border-border-strong"
                 >
                   {child.title}
                 </Link>
@@ -148,10 +148,10 @@ export default async function GoalDetailPage({
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="font-mono text-[10.5px] uppercase tracking-[0.08em] text-ink-faint">
+      <dt className="font-mono text-[10.5px] uppercase tracking-[0.08em] text-text-faint">
         {label}
       </dt>
-      <dd className="mt-1 text-[14px] text-ink">{value}</dd>
+      <dd className="mt-1 text-[14px] text-text-primary">{value}</dd>
     </div>
   );
 }

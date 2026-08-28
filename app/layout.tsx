@@ -32,7 +32,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${fraunces.variable} ${plexSans.variable} ${plexMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-surface font-sans text-ink">
+      <body className="min-h-full bg-surface font-sans text-text-primary">
         {children}
       </body>
     </html>

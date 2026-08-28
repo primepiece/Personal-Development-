@@ -25,19 +25,19 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center px-6">
       <div className="w-full max-w-sm">
-        <p className="font-display text-[15px] font-bold tracking-[0.14em] text-ink">
-          PRIME <span className="text-ink-faint">JAMES</span>
+        <p className="font-display text-[15px] font-bold tracking-[0.14em] text-text-primary">
+          PRIME <span className="text-text-faint">JAMES</span>
         </p>
-        <h1 className="mt-6 font-display text-2xl font-semibold text-ink">
+        <h1 className="mt-6 font-display text-2xl font-semibold text-text-primary">
           Sign in
         </h1>
-        <p className="mt-2 text-[14px] text-ink-soft">
+        <p className="mt-2 text-[14px] text-text-secondary">
           One person, one account. We&apos;ll email a link — no password to
           leak alongside everything else this app will know about you.
         </p>
 
         {status === "sent" ? (
-          <p className="mt-8 rounded-sm border border-line bg-surface-raised px-4 py-3 text-[14px] text-ink-soft">
+          <p className="mt-8 rounded-sm border border-border bg-surface px-4 py-3 text-[14px] text-text-secondary">
             Check {email} for a sign-in link.
           </p>
         ) : (
@@ -48,17 +48,17 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@domain.com"
-              className="rounded-sm border border-line bg-surface-raised px-3 py-2.5 text-[14px] text-ink outline-none focus-visible:border-accent"
+              className="field-input"
             />
             <button
               type="submit"
               disabled={status === "sending"}
-              className="rounded-sm bg-ink px-4 py-2.5 text-[14px] font-medium text-surface disabled:opacity-60"
+              className="btn-primary disabled:opacity-60"
             >
               {status === "sending" ? "Sending…" : "Send sign-in link"}
             </button>
             {status === "error" && (
-              <p className="text-[13px] text-warn">
+              <p className="text-[13px] text-warning">
                 Something went wrong sending that link. Try again.
               </p>
             )}

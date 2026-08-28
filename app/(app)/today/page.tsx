@@ -105,8 +105,8 @@ export default async function TodayPage() {
 
   return (
     <div className="px-6 py-10 md:px-12 md:py-14">
-      <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-ink-faint">Today</p>
-      <h1 className="mt-2 font-display text-3xl font-semibold text-ink md:text-4xl">
+      <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-text-faint">Today</p>
+      <h1 className="mt-2 font-display text-3xl font-semibold text-text-primary md:text-4xl">
         What matters today?
       </h1>
 
@@ -114,7 +114,7 @@ export default async function TodayPage() {
         <PrimeActions actions={actionRows} weeklyGoals={weeklyGoalOptions} pillars={pillars} />
         {suggestions.length > 0 && (
           <div className="mt-6">
-            <h2 className="font-mono text-[11px] uppercase tracking-[0.1em] text-ink-faint">
+            <h2 className="font-mono text-[11px] uppercase tracking-[0.1em] text-text-faint">
               Suggested
             </h2>
             <div className="mt-3">
@@ -125,7 +125,7 @@ export default async function TodayPage() {
       </section>
 
       <section className="mt-12">
-        <h2 className="font-mono text-[11px] uppercase tracking-[0.1em] text-ink-faint">
+        <h2 className="font-mono text-[11px] uppercase tracking-[0.1em] text-text-faint">
           Recurring
         </h2>
         <div className="mt-4">
@@ -134,7 +134,7 @@ export default async function TodayPage() {
       </section>
 
       <section className="mt-12">
-        <h2 className="font-mono text-[11px] uppercase tracking-[0.1em] text-ink-faint">
+        <h2 className="font-mono text-[11px] uppercase tracking-[0.1em] text-text-faint">
           Today so far
         </h2>
         <div className="mt-4">
@@ -143,7 +143,7 @@ export default async function TodayPage() {
       </section>
 
       <section className="mt-12">
-        <h2 className="font-mono text-[11px] uppercase tracking-[0.1em] text-ink-faint">
+        <h2 className="font-mono text-[11px] uppercase tracking-[0.1em] text-text-faint">
           Evening review
         </h2>
         <div className="mt-4">

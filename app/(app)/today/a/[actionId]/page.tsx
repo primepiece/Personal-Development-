@@ -43,44 +43,44 @@ export default async function ActionDetailPage({
 
   return (
     <div className="px-6 py-10 md:px-12 md:py-14">
-      <Link href="/today" className="font-mono text-[11px] text-ink-faint hover:text-ink">
+      <Link href="/today" className="font-mono text-[11px] text-text-faint hover:text-text-primary">
         ← Today
       </Link>
 
       {chain.length > 0 && (
         <nav aria-label="Lineage" className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="font-mono text-[11.5px] text-ink-faint">Vision</span>
+          <span className="font-mono text-[11.5px] text-text-faint">Vision</span>
           {chain.map((step) => (
             <span key={step.id} className="flex items-center gap-2">
-              <span className="text-ink-faint">→</span>
+              <span className="text-text-faint">→</span>
               <Link
                 href={`/goals/${category?.slug}/g/${step.id}`}
-                className="font-mono text-[11.5px] text-ink-faint hover:text-ink"
+                className="font-mono text-[11.5px] text-text-faint hover:text-text-primary"
               >
                 {TIER_LABEL[step.tier as GoalTier]}
               </Link>
             </span>
           ))}
-          <span className="text-ink-faint">→</span>
-          <span className="font-mono text-[11.5px] font-semibold text-ink">Action</span>
+          <span className="text-text-faint">→</span>
+          <span className="font-mono text-[11.5px] font-semibold text-text-primary">Action</span>
         </nav>
       )}
 
-      <h1 className="mt-4 font-display text-3xl font-semibold text-ink md:text-4xl">
+      <h1 className="mt-4 font-display text-3xl font-semibold text-text-primary md:text-4xl">
         {action.title}
       </h1>
 
-      <div className="mt-6 max-w-[62ch] rounded-sm border border-line bg-surface-raised px-5 py-4">
-        <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-ink-faint">
+      <div className="mt-6 max-w-[62ch] rounded-sm border border-border bg-surface px-5 py-4">
+        <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-text-faint">
           Why am I doing this?
         </p>
         {action.isStandalone ? (
-          <p className="mt-2 text-[14.5px] leading-relaxed text-ink-soft">
+          <p className="mt-2 text-[14.5px] leading-relaxed text-text-secondary">
             This is a deliberately standalone action — it isn&apos;t linked to a goal. That was
             an explicit choice when it was created, not a default.
           </p>
         ) : (
-          <p className="mt-2 text-[14.5px] leading-relaxed text-ink-soft">
+          <p className="mt-2 text-[14.5px] leading-relaxed text-text-secondary">
             {vision?.whyItMatters ||
               `No Vision written yet for ${category?.name ?? "this pillar"} — write one to answer this properly.`}
           </p>
@@ -101,8 +101,8 @@ export default async function ActionDetailPage({
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="font-mono text-[10.5px] uppercase tracking-[0.08em] text-ink-faint">{label}</dt>
-      <dd className="mt-1 text-[14px] text-ink">{value}</dd>
+      <dt className="font-mono text-[10.5px] uppercase tracking-[0.08em] text-text-faint">{label}</dt>
+      <dd className="mt-1 text-[14px] text-text-primary">{value}</dd>
     </div>
   );
 }
