@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { goalRecurrence, goals, lifeCategories, visionEntries } from "@/db/schema";
 import { traceGoalChain } from "@/lib/goals/trace";
 import { TIER_LABEL, type GoalTier } from "@/lib/goals/tiers";
+import { toggleGoalDoneAction } from "@/app/(app)/goals/actions";
 
 export default async function GoalDetailPage({
   params,
@@ -74,9 +75,24 @@ export default async function GoalDetailPage({
         ))}
       </nav>
 
-      <h1 className="mt-4 font-display text-3xl font-semibold text-text-primary md:text-4xl">
-        {goal.title}
-      </h1>
+      <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
+        <h1 className="font-display text-3xl font-semibold text-text-primary md:text-4xl">
+          {goal.title}
+        </h1>
+        <form action={toggleGoalDoneAction}>
+          <input type="hidden" name="goalId" value={goal.id} />
+          <button
+            type="submit"
+            className={`shrink-0 rounded-sm border px-3 py-1.5 font-mono text-[11px] ${
+              goal.status === "done"
+                ? "border-positive bg-positive text-text-on-accent"
+                : "border-border-strong text-text-primary"
+            }`}
+          >
+            {goal.status === "done" ? "✓ done — reopen" : "mark done"}
+          </button>
+        </form>
+      </div>
 
       <div className="mt-6 max-w-[62ch] rounded-sm border border-border bg-surface px-5 py-4">
         <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-text-faint">
@@ -119,8 +135,11 @@ export default async function GoalDetailPage({
 
         {goal.tier === "weekly" ? (
           <p className="mt-3 text-[13.5px] text-text-faint">
-            Weekly is as deep as the cascade goes for now — Today (M2) will let daily
-            actions link up to a weekly goal like this one.
+            Weekly is as deep as the goal cascade goes — see{" "}
+            <Link href="/today" className="text-text-secondary hover:text-accent">
+              Today
+            </Link>{" "}
+            for the Prime Actions linked to this goal.
           </p>
         ) : children.length === 0 ? (
           <p className="mt-3 text-[13.5px] text-text-faint">

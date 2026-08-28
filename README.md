@@ -4,23 +4,27 @@ A personal operating system, not a habit tracker. See the architecture doc
 for the full product design, data model, AI architecture and milestone plan
 this repo is being built against.
 
-## Current milestone: M0–M2 — foundation, Vision → Standards → Goals, Today
+## Current milestone: M0–M3 — foundation, Goals, Today, the measurement layer
 
-No scoring, no AI, no Trajectory/Timeline/Coach content yet — those are
-M3 onward. Everything here has been verified end-to-end against a real
-local Postgres — schema push, seed, a full Vision → Standard →
-Milestone(age 25) → Annual → Quarterly → Monthly → Weekly chain, and a
-full day through Today (Prime Actions, a logged recurring completion,
-an evening review, an edited review preserving its original in history)
-— it just hasn't touched *your* database yet, because only you can
-create the Supabase project.
+No Trajectory, Timeline, or Coach narration yet — those are M4 onward.
+Everything here has been verified end-to-end against a real local
+Postgres — schema push, seed, a full Vision → Standard → Milestone →
+Annual → Quarterly → Monthly → Weekly chain, a full day through Today,
+and now a full pillar-scoring + signal-detection pass across seven
+pillars with deliberately mixed data (some healthy, some genuinely
+neglected, some too new to judge) — it just hasn't touched *your*
+database yet, because only you can create the Supabase project.
 
 - **Nav:** `Prime` (home) · `Today` · `Goals` · `Trajectory` · `Timeline` ·
   `Coach` — desktop left rail, mobile bottom bar (see
   `components/nav/prime-nav.tsx`).
-- **Design tokens:** `app/globals.css` — warm graphite ink, a single brass
-  accent, steel-blue as the only secondary hue. Fraunces (display) / IBM
-  Plex Sans (body) / IBM Plex Mono (data, schema-shaped text).
+- **Design tokens:** `app/globals.css` — black / teal / white, a
+  deliberate single dark identity. Fully semantic (`background`,
+  `surface`/`surface-raised`, `text-primary`/`secondary`/`faint`,
+  `accent`/`accent-muted`, `positive`/`warning`/`danger`) so shades can
+  be retuned without touching a component. Teal is restrained by
+  convention (active nav, the one `.btn-primary` style, progress,
+  selected states) — checked against WCAG AA, not eyeballed.
 - **Auth:** Supabase email magic-link, session refreshed in `proxy.ts`.
   Every route except `/login` and `/auth/callback` requires a signed-in
   user.
@@ -28,22 +32,25 @@ create the Supabase project.
   - `life_categories` — the seven pillars. `id`/`slug` are immutable,
     `name` is the only mutable field, retirement is `is_active = false`
     (never a delete).
-  - `vision_entries` (+ `vision_entry_history`) — one current Vision per
-    pillar, edits snapshotted before they overwrite.
-  - `standards` — standing rules per pillar, separate from goals.
+  - `vision_entries` (+ `vision_entry_history`), `standards` — Vision and
+    standing rules per pillar, separate from goals.
   - `goals` (+ `goal_history`, `goal_recurrence` / `goal_recurrence_history`,
     `behavior_completions`) — the cascade: `milestone` (optionally
     age-anchored) → `annual` → `quarterly` → `monthly` → `weekly`.
-  - `ventures` — named initiatives ("PrimeAI"), find-or-create by name,
-    optionally tagged onto a Prime Action.
-  - `daily_actions` — today's up-to-five. A `CHECK` constraint enforces
-    that every action either links to a weekly goal or is explicitly
-    marked standalone — going without a goal can never be a silent
-    default.
-  - `daily_reviews` (+ `daily_review_history`) — one review per day,
-    `raw_text` never touched by anything but you; edits snapshot the
-    prior version first.
-  - Scoring, Trajectory, Timeline and Coach tables land in M3–M8.
+  - `ventures`, `daily_actions` (a `CHECK` constraint enforces every
+    action links to a weekly goal or is explicitly marked standalone),
+    `daily_reviews` (+ `daily_review_history`).
+  - `category_scores` — insert-only pillar score snapshots. `score` and
+    `trend` are nullable (Insufficient data is a stored state); the
+    `breakdown` jsonb embeds each component's exact value, weight,
+    period and calculation text as computed at that moment, so a later
+    formula change can never retroactively rewrite what an old snapshot
+    meant.
+  - `coach_signals` + `coach_signal_references` — the deterministic
+    Layer 1 signal engine (`lib/signals/detect.ts`): seven detector
+    types, reconciled (not re-inserted) on every run, each claim backed
+    by real referenced rows.
+  - Timeline and Coach's LLM narration land in M5–M8.
 - **`/goals`** is both the Vision/Standards/Goals feature and M0's
   database verification in one place: once you're signed in against
   your own Supabase project, it reads the seven pillars live from
@@ -54,6 +61,14 @@ create the Supabase project.
   list (`lib/today/suggestions.ts` — no model call, real counts only),
   write the evening review, and read the deterministic Daily Summary
   (`lib/today/summary.ts`) computed fresh from the day's actual rows.
+- **`/` (Prime dashboard)** shows the Trajectory State (Strong / Mixed /
+  Off Track / Establishing Baseline — never an average of the seven
+  scores), the seven pillars with real scores or honest blanks, and the
+  active signals list. **`/pillars/[category]`** exposes the full
+  breakdown — component, value, weight, source, period, calculation,
+  underlying records — plus that pillar's history and active signals.
+  A "Recompute" button (`recomputeAllAction`) runs the whole
+  deterministic layer; nothing recomputes silently on page load.
 
 ## One-time setup (do this once, outside of this session)
 

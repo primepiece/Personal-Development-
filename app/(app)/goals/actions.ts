@@ -164,5 +164,27 @@ export async function createGoalAction(formData: FormData) {
   revalidatePath(`/goals`);
 }
 
+/**
+ * The one piece of goal-editing M3 needs: a way to mark a goal done (or
+ * reopen it), so the goal_completed signal has something real to detect.
+ * Everything else about goal-editing stays out of scope until it's asked
+ * for — this isn't a general edit form, just a status toggle.
+ */
+export async function toggleGoalDoneAction(formData: FormData) {
+  await requireUser();
+
+  const goalId = str(formData, "goalId");
+  const [goal] = await db.select().from(goals).where(eq(goals.id, goalId)).limit(1);
+  if (!goal) throw new Error("Goal not found.");
+
+  await db
+    .update(goals)
+    .set({ status: goal.status === "done" ? "active" : "done", updatedAt: new Date() })
+    .where(eq(goals.id, goalId));
+
+  revalidatePath(`/goals`);
+  revalidatePath(`/`);
+}
+
 // goal_history is wired into the schema (db/schema/goals.ts) for when
-// goal editing ships — M1 only creates goals, so nothing writes there yet.
+// full goal editing ships — this action only ever touches status.

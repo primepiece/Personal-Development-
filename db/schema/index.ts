@@ -5,3 +5,4 @@ export * from "./goals";
 export * from "./ventures";
 export * from "./daily-actions";
 export * from "./daily-reviews";
+export * from "./scoring";

@@ -15,6 +15,13 @@
       "when": 1787876351331,
       "tag": "0001_faithful_martin_li",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787878648924,
+      "tag": "0002_wise_moon_knight",
+      "breakpoints": true
     }
   ]
 }
