@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, eq, ilike } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
   behaviorCompletions,
@@ -9,10 +9,10 @@ import {
   dailyReviews,
   dailyReviewHistory,
   goals,
-  ventures,
 } from "@/db/schema";
 import { createClient } from "@/lib/supabase/server";
 import { todayKey } from "@/lib/today/date";
+import { findOrCreateVenture } from "@/lib/ventures/find-or-create";
 
 const MAX_DAILY_ACTIONS = 5;
 
@@ -28,18 +28,6 @@ async function requireUser() {
 function str(formData: FormData, key: string) {
   const value = formData.get(key);
   return typeof value === "string" ? value.trim() : "";
-}
-
-async function findOrCreateVenture(name: string): Promise<string> {
-  const [existing] = await db
-    .select()
-    .from(ventures)
-    .where(ilike(ventures.name, name))
-    .limit(1);
-  if (existing) return existing.id;
-
-  const [created] = await db.insert(ventures).values({ name }).returning();
-  return created.id;
 }
 
 export async function createDailyActionAction(formData: FormData) {

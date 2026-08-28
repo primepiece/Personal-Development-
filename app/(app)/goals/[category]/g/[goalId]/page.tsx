@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { goalRecurrence, goals, lifeCategories, visionEntries } from "@/db/schema";
+import { goalRecurrence, goals, lifeCategories, trajectoryCheckpoints, trajectoryMetrics, visionEntries } from "@/db/schema";
 import { traceGoalChain } from "@/lib/goals/trace";
 import { TIER_LABEL, type GoalTier } from "@/lib/goals/tiers";
 import { toggleGoalDoneAction } from "@/app/(app)/goals/actions";
+import { computeMetricTrajectory } from "@/lib/trajectory/compute";
+import { formatMetricValue } from "@/lib/trajectory/format";
 
 export default async function GoalDetailPage({
   params,
@@ -44,6 +46,22 @@ export default async function GoalDetailPage({
           .where(eq(goalRecurrence.goalId, goal.id))
           .limit(1)
       : [];
+
+  const [linkedMetric] = await db
+    .select()
+    .from(trajectoryMetrics)
+    .where(eq(trajectoryMetrics.linkedGoalId, goal.id))
+    .limit(1);
+  const metricCheckpoints = linkedMetric
+    ? await db
+        .select()
+        .from(trajectoryCheckpoints)
+        .where(eq(trajectoryCheckpoints.metricId, linkedMetric.id))
+        .orderBy(asc(trajectoryCheckpoints.asOfDate))
+    : [];
+  const metricTrajectory = linkedMetric
+    ? computeMetricTrajectory(linkedMetric, metricCheckpoints, new Date())
+    : null;
 
   return (
     <div className="px-6 py-10 md:px-12 md:py-14">
@@ -126,6 +144,31 @@ export default async function GoalDetailPage({
         <p className="mt-6 max-w-[62ch] text-[14.5px] leading-relaxed text-text-secondary">
           {goal.description}
         </p>
+      )}
+
+      {linkedMetric && metricTrajectory && (
+        <section className="mt-10">
+          <h2 className="font-mono text-[11px] uppercase tracking-[0.1em] text-text-faint">
+            Progress — {linkedMetric.name}
+          </h2>
+          <div className="mt-3 max-w-[62ch] rounded-sm border border-border bg-surface px-5 py-4">
+            <div className="flex flex-wrap items-baseline justify-between gap-3">
+              <span className="font-mono text-[20px] text-text-primary">
+                {metricTrajectory.current ? formatMetricValue(linkedMetric.unit, metricTrajectory.current.value) : "—"}
+                {metricTrajectory.target && (
+                  <span className="text-text-faint"> / {formatMetricValue(linkedMetric.unit, metricTrajectory.target.value)}</span>
+                )}
+              </span>
+              <span className="font-mono text-[11px] uppercase text-text-secondary">
+                {metricTrajectory.statusLabel}
+              </span>
+            </div>
+            <p className="mt-2 text-[13px] text-text-secondary">{metricTrajectory.statusReason}</p>
+            <Link href="/trajectory" className="mt-2 inline-block font-mono text-[11px] text-text-faint hover:text-accent">
+              → full breakdown on Trajectory
+            </Link>
+          </div>
+        </section>
       )}
 
       <section className="mt-12">

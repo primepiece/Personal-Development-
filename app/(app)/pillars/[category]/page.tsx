@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { categoryScores, coachSignals, lifeCategories } from "@/db/schema";
+import { categoryScores, coachSignals, lifeCategories, trajectoryCheckpoints, trajectoryMetrics } from "@/db/schema";
 import type { ScoreComponent } from "@/lib/scoring/components";
 import { CONFIDENCE_LABEL, SIGNAL_TYPE_LABEL, describeSignal } from "@/lib/scoring/labels";
+import { computeMetricTrajectory } from "@/lib/trajectory/compute";
+import { formatMetricValue } from "@/lib/trajectory/format";
+import { acknowledgeSignalAction, suppressSignalAction } from "../../actions";
 
 const HISTORY_LIMIT = 10;
 
@@ -32,11 +35,31 @@ export default async function PillarScorePage({
   const signals = await db
     .select()
     .from(coachSignals)
-    .where(and(eq(coachSignals.categoryId, category.id), eq(coachSignals.status, "active")));
+    .where(
+      and(
+        eq(coachSignals.categoryId, category.id),
+        inArray(coachSignals.status, ["new", "active", "acknowledged"]),
+      ),
+    );
 
   const breakdown = latest?.breakdown as
     | { components: ScoreComponent[]; confidenceReason: string }
     | undefined;
+
+  const metrics = await db
+    .select()
+    .from(trajectoryMetrics)
+    .where(and(eq(trajectoryMetrics.categoryId, category.id), eq(trajectoryMetrics.isActive, true)));
+
+  const metricsWithTrajectory = await Promise.all(
+    metrics.map(async (metric) => {
+      const checkpoints = await db
+        .select()
+        .from(trajectoryCheckpoints)
+        .where(eq(trajectoryCheckpoints.metricId, metric.id));
+      return { metric, trajectory: computeMetricTrajectory(metric, checkpoints, new Date()) };
+    }),
+  );
 
   return (
     <div className="px-6 py-10 md:px-12 md:py-14">
@@ -72,7 +95,7 @@ export default async function PillarScorePage({
       {breakdown && (
         <section className="mt-10">
           <h2 className="font-mono text-[11px] uppercase tracking-[0.1em] text-text-faint">
-            Components
+            Behavior evidence — scored components
           </h2>
           <ul className="mt-4 flex flex-col gap-3">
             {breakdown.components.map((c) => (
@@ -84,6 +107,38 @@ export default async function PillarScorePage({
 
       <section className="mt-12">
         <h2 className="font-mono text-[11px] uppercase tracking-[0.1em] text-text-faint">
+          Outcome evidence — not scored
+        </h2>
+        <p className="mt-2 max-w-[62ch] text-[13px] text-text-faint">
+          Trajectory metrics for this pillar. Shown for evidence, not blended into the score above
+          — there&apos;s no agreed rule yet for how outcome pace should affect a behavior-based score.
+        </p>
+        {metricsWithTrajectory.length === 0 ? (
+          <p className="mt-3 text-[13.5px] text-text-faint">No metrics tracked for this pillar yet.</p>
+        ) : (
+          <ul className="mt-3 flex flex-col gap-2">
+            {metricsWithTrajectory.map(({ metric, trajectory }) => (
+              <li key={metric.id} className="flex items-center justify-between gap-4 rounded-sm border border-border bg-surface px-4 py-3">
+                <div className="min-w-0">
+                  <Link href="/trajectory" className="text-[14px] text-text-primary hover:text-accent">
+                    {metric.name}
+                  </Link>
+                  <p className="mt-1 font-mono text-[11px] text-text-secondary">
+                    {trajectory.current ? formatMetricValue(metric.unit, trajectory.current.value) : "—"}
+                    {trajectory.target && ` / ${formatMetricValue(metric.unit, trajectory.target.value)}`}
+                  </p>
+                </div>
+                <span className="shrink-0 font-mono text-[11px] uppercase text-text-secondary">
+                  {trajectory.statusLabel}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="mt-12">
+        <h2 className="font-mono text-[11px] uppercase tracking-[0.1em] text-text-faint">
           Active signals
         </h2>
         {signals.length === 0 ? (
@@ -91,11 +146,36 @@ export default async function PillarScorePage({
         ) : (
           <ul className="mt-3 flex flex-col gap-2">
             {signals.map((s) => (
-              <li key={s.id} className="rounded-sm border border-border bg-surface px-4 py-3">
-                <p className="text-[14px] text-text-primary">{describeSignal(s)}</p>
-                <p className="mt-1 font-mono text-[11px] text-text-secondary">
-                  {SIGNAL_TYPE_LABEL[s.type]} · detected {s.detectedAt.toISOString().slice(0, 10)}
-                </p>
+              <li
+                key={s.id}
+                className={`flex items-center justify-between gap-4 rounded-sm border border-border bg-surface px-4 py-3 ${
+                  s.status === "acknowledged" ? "opacity-60" : ""
+                }`}
+              >
+                <div className="min-w-0">
+                  <p className="text-[14px] text-text-primary">{describeSignal(s)}</p>
+                  <p className="mt-1 font-mono text-[11px] text-text-secondary">
+                    {SIGNAL_TYPE_LABEL[s.type]} · importance {s.importance} · detected{" "}
+                    {s.detectedAt.toISOString().slice(0, 10)}
+                    {s.status === "new" && <span className="text-accent"> · new</span>}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-3">
+                  {s.status !== "acknowledged" && (
+                    <form action={acknowledgeSignalAction}>
+                      <input type="hidden" name="signalId" value={s.id} />
+                      <button type="submit" className="font-mono text-[11px] text-text-faint hover:text-text-primary">
+                        ack
+                      </button>
+                    </form>
+                  )}
+                  <form action={suppressSignalAction}>
+                    <input type="hidden" name="signalId" value={s.id} />
+                    <button type="submit" className="font-mono text-[11px] text-text-faint hover:text-warning">
+                      suppress
+                    </button>
+                  </form>
+                </div>
               </li>
             ))}
           </ul>

@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { categoryScores, coachSignals, lifeCategories } from "@/db/schema";
 import { computeTrajectoryState } from "@/lib/scoring/trajectory";
 import { CONFIDENCE_LABEL, SIGNAL_TYPE_LABEL, TRAJECTORY_LABEL, describeSignal } from "@/lib/scoring/labels";
-import { recomputeAllAction } from "./actions";
+import { recomputeAllAction, acknowledgeSignalAction, suppressSignalAction } from "./actions";
 
 export default async function PrimeDashboard() {
   const pillars = await db
@@ -30,6 +30,8 @@ export default async function PrimeDashboard() {
       id: coachSignals.id,
       type: coachSignals.type,
       severity: coachSignals.severity,
+      importance: coachSignals.importance,
+      status: coachSignals.status,
       categoryId: coachSignals.categoryId,
       categoryName: lifeCategories.name,
       categorySlug: lifeCategories.slug,
@@ -38,12 +40,15 @@ export default async function PrimeDashboard() {
     })
     .from(coachSignals)
     .innerJoin(lifeCategories, eq(lifeCategories.id, coachSignals.categoryId))
-    .where(eq(coachSignals.status, "active"));
+    .where(inArray(coachSignals.status, ["new", "active", "acknowledged"]));
 
+  // Two independent axes shown, sorted, never blended into one number —
+  // ranking them together is Prime Coach's job (M5+), not this dashboard's.
   const severityOrder = { critical: 0, warning: 1, info: 2 } as const;
   activeSignalRows.sort(
     (a, b) =>
       severityOrder[a.severity] - severityOrder[b.severity] ||
+      b.importance - a.importance ||
       b.detectedAt.getTime() - a.detectedAt.getTime(),
   );
 
@@ -125,17 +130,39 @@ export default async function PrimeDashboard() {
             {activeSignalRows.map((signal) => (
               <li
                 key={signal.id}
-                className="flex items-center justify-between gap-4 rounded-sm border border-border bg-surface px-4 py-3"
+                className={`flex items-center justify-between gap-4 rounded-sm border border-border bg-surface px-4 py-3 ${
+                  signal.status === "acknowledged" ? "opacity-60" : ""
+                }`}
               >
                 <div className="min-w-0">
                   <p className="text-[14px] text-text-primary">{describeSignal(signal)}</p>
-                  <p className="mt-1 font-mono text-[11px] text-text-secondary">
-                    {SIGNAL_TYPE_LABEL[signal.type]} · {signal.categoryName}
+                  <p className="mt-1 flex flex-wrap gap-x-2 font-mono text-[11px] text-text-secondary">
+                    <span>{SIGNAL_TYPE_LABEL[signal.type]}</span>
+                    <span>· {signal.categoryName}</span>
+                    <span>· importance {signal.importance}</span>
+                    {signal.status === "new" && <span className="text-accent">· new</span>}
+                    {signal.status === "acknowledged" && <span>· acknowledged</span>}
                   </p>
                 </div>
-                <span className={`shrink-0 font-mono text-[11px] uppercase ${severityColor(signal.severity)}`}>
-                  {signal.severity}
-                </span>
+                <div className="flex shrink-0 items-center gap-3">
+                  <span className={`font-mono text-[11px] uppercase ${severityColor(signal.severity)}`}>
+                    {signal.severity}
+                  </span>
+                  {signal.status !== "acknowledged" && (
+                    <form action={acknowledgeSignalAction}>
+                      <input type="hidden" name="signalId" value={signal.id} />
+                      <button type="submit" className="font-mono text-[11px] text-text-faint hover:text-text-primary">
+                        ack
+                      </button>
+                    </form>
+                  )}
+                  <form action={suppressSignalAction}>
+                    <input type="hidden" name="signalId" value={signal.id} />
+                    <button type="submit" className="font-mono text-[11px] text-text-faint hover:text-warning">
+                      suppress
+                    </button>
+                  </form>
+                </div>
               </li>
             ))}
           </ul>

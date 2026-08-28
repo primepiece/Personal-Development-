@@ -29,12 +29,13 @@ type Evidence = Record<string, unknown>;
 type Ref = { table: string; id: string };
 
 /**
- * The one place a signal gets written. A still-true condition never
- * duplicates its row (the original detected_at is preserved); a
- * no-longer-true one gets resolved rather than left as a stale claim.
- * Event-type signals (goalId set, e.g. goal_completed) pass
- * `eventOnce: true` — once logged they stay as a historical record
- * rather than being resolved when the condition briefly isn't true.
+ * The one place a signal gets written, and the whole lifecycle lives
+ * here: new → active → (acknowledged | suppressed) → resolved. A still-
+ * true condition never duplicates its live row (detected_at stays
+ * original); a no-longer-true one resolves; a condition the user
+ * suppressed stays quiet even while still true; a condition that returns
+ * after resolving is a genuine recurrence and gets a fresh `new` row,
+ * not a resurrected old one.
  */
 async function reconcile(params: {
   type: SignalType;
@@ -42,53 +43,35 @@ async function reconcile(params: {
   goalId: string | null;
   shouldBeActive: boolean;
   severity: SignalSeverity;
+  importance: number;
   evidence: Evidence;
   refs: Ref[];
-  eventOnce?: boolean;
 }) {
-  const { type, categoryId, goalId, shouldBeActive, severity, evidence, refs, eventOnce } = params;
-
+  const { type, categoryId, goalId, shouldBeActive, severity, importance, evidence, refs } = params;
   const goalMatch = goalId ? eq(coachSignals.goalId, goalId) : isNull(coachSignals.goalId);
 
-  if (eventOnce) {
-    const [anyExisting] = await db
-      .select()
-      .from(coachSignals)
-      .where(and(eq(coachSignals.type, type), eq(coachSignals.categoryId, categoryId), goalMatch))
-      .limit(1);
-    if (shouldBeActive && !anyExisting) {
-      await insertSignal({ type, categoryId, goalId, severity, evidence, refs });
-    } else if (!shouldBeActive && anyExisting && anyExisting.status === "active") {
-      await db
-        .update(coachSignals)
-        .set({ status: "resolved", resolvedAt: new Date() })
-        .where(eq(coachSignals.id, anyExisting.id));
-    }
-    return;
-  }
-
-  const [existingActive] = await db
+  const [existing] = await db
     .select()
     .from(coachSignals)
-    .where(
-      and(
-        eq(coachSignals.type, type),
-        eq(coachSignals.categoryId, categoryId),
-        goalMatch,
-        eq(coachSignals.status, "active"),
-      ),
-    )
+    .where(and(eq(coachSignals.type, type), eq(coachSignals.categoryId, categoryId), goalMatch))
+    .orderBy(desc(coachSignals.detectedAt))
     .limit(1);
 
-  if (shouldBeActive && !existingActive) {
-    await insertSignal({ type, categoryId, goalId, severity, evidence, refs });
-  } else if (!shouldBeActive && existingActive) {
+  if (shouldBeActive) {
+    if (!existing || existing.status === "resolved") {
+      await insertSignal({ type, categoryId, goalId, severity, importance, evidence, refs });
+    } else if (existing.status === "new") {
+      await db.update(coachSignals).set({ status: "active" }).where(eq(coachSignals.id, existing.id));
+    }
+    // suppressed, active, acknowledged: leave alone.
+  } else if (existing && existing.status !== "resolved") {
+    // Includes suppressed: a condition the user silenced still resolves once it's genuinely no
+    // longer true — suppression mutes the signal, it doesn't override reality.
     await db
       .update(coachSignals)
       .set({ status: "resolved", resolvedAt: new Date() })
-      .where(eq(coachSignals.id, existingActive.id));
+      .where(eq(coachSignals.id, existing.id));
   }
-  // shouldBeActive && existingActive: leave it — detected_at stays original.
 }
 
 async function insertSignal(params: {
@@ -96,6 +79,7 @@ async function insertSignal(params: {
   categoryId: string;
   goalId: string | null;
   severity: SignalSeverity;
+  importance: number;
   evidence: Evidence;
   refs: Ref[];
 }) {
@@ -106,6 +90,7 @@ async function insertSignal(params: {
       categoryId: params.categoryId,
       goalId: params.goalId,
       severity: params.severity,
+      importance: params.importance,
       evidence: params.evidence,
     })
     .returning();
@@ -153,6 +138,7 @@ async function detectPriorityNeglected(now: Date) {
       goalId: goal.id,
       shouldBeActive,
       severity,
+      importance: goal.priority,
       evidence: { goalTitle: goal.title, priority: goal.priority, daysSinceTouch: days },
       refs: [{ table: "goals", id: goal.id }],
     });
@@ -181,6 +167,7 @@ async function detectDeadlineAtRisk(now: Date) {
       goalId: goal.id,
       shouldBeActive,
       severity,
+      importance: goal.priority,
       evidence: { goalTitle: goal.title, targetDate: goal.targetDate, daysUntil },
       refs: [{ table: "goals", id: goal.id }],
     });
@@ -207,6 +194,7 @@ async function detectAdherenceTrendAndStreak(now: Date) {
       goalId: goal.id,
       shouldBeActive: report.streak >= STREAK_THRESHOLD,
       severity: "info",
+      importance: goal.priority,
       evidence: { goalTitle: goal.title, streak: report.streak, period: recurrence.period },
       refs: [{ table: "goals", id: goal.id }],
     });
@@ -229,6 +217,7 @@ async function detectAdherenceTrendAndStreak(now: Date) {
         goalId: goal.id,
         shouldBeActive: declining,
         severity: recentRate < 25 ? "critical" : "warning",
+        importance: goal.priority,
         evidence: { goalTitle: goal.title, recentRate: round1(recentRate), priorAvg: round1(priorAvg), diff: round1(diff) },
         refs: [{ table: "goals", id: goal.id }],
       });
@@ -239,6 +228,7 @@ async function detectAdherenceTrendAndStreak(now: Date) {
         goalId: goal.id,
         shouldBeActive: improving,
         severity: "info",
+        importance: goal.priority,
         evidence: { goalTitle: goal.title, recentRate: round1(recentRate), priorAvg: round1(priorAvg), diff: round1(diff) },
         refs: [{ table: "goals", id: goal.id }],
       });
@@ -251,10 +241,12 @@ async function detectPillarSignals(now: Date) {
 
   for (const category of categories) {
     const activeGoals = await db
-      .select({ id: goals.id, createdAt: goals.createdAt })
+      .select({ id: goals.id, createdAt: goals.createdAt, priority: goals.priority })
       .from(goals)
       .where(and(eq(goals.categoryId, category.id), eq(goals.status, "active")));
     if (activeGoals.length === 0) continue;
+
+    const pillarImportance = Math.max(...activeGoals.map((g) => g.priority));
 
     const [lastAction] = await db
       .select({ date: dailyActions.date })
@@ -290,6 +282,7 @@ async function detectPillarSignals(now: Date) {
       goalId: null,
       shouldBeActive: days >= PILLAR_NEGLECT_DAYS,
       severity: days >= 14 ? "critical" : "warning",
+      importance: pillarImportance,
       evidence: { categoryName: category.name, daysSinceTouch: days },
       refs: [],
     });
@@ -319,6 +312,7 @@ async function detectPillarSignals(now: Date) {
         goalId: null,
         shouldBeActive: diff <= -ACTION_RATE_DROP_THRESHOLD,
         severity: recentRate < 30 && recentActions.length >= 3 ? "critical" : "warning",
+        importance: pillarImportance,
         evidence: {
           categoryName: category.name,
           recentRate: round1(recentRate),
@@ -342,9 +336,9 @@ async function detectGoalCompleted() {
       goalId: goal.id,
       shouldBeActive: true,
       severity: "info",
+      importance: goal.priority,
       evidence: { goalTitle: goal.title, tier: goal.tier },
       refs: [{ table: "goals", id: goal.id }],
-      eventOnce: true,
     });
   }
 
@@ -355,9 +349,9 @@ async function detectGoalCompleted() {
       goalId: goal.id,
       shouldBeActive: false,
       severity: "info",
+      importance: goal.priority,
       evidence: { goalTitle: goal.title },
       refs: [],
-      eventOnce: true,
     });
   }
 }

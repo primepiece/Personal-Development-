@@ -1,5 +1,6 @@
 import {
   doublePrecision,
+  integer,
   jsonb,
   pgEnum,
   pgTable,
@@ -59,7 +60,24 @@ export const signalSeverityEnum = pgEnum("signal_severity", [
   "critical",
 ]);
 
-export const signalStatusEnum = pgEnum("signal_status", ["active", "resolved"]);
+/**
+ * new — just appeared this detector run, never surfaced before.
+ * active — still true, has been seen in at least one prior run.
+ * acknowledged — you've explicitly said "I know, still tracking it" (the
+ *   condition can still be true; this just stops it reading as unseen).
+ * resolved — the underlying condition is no longer true. System-driven
+ *   only; never set by a user action.
+ * suppressed — you've explicitly said "stop showing me this," independent
+ *   of whether the condition is still true. Stays quiet even if it
+ *   resolves later; the row is kept for the record, not deleted.
+ */
+export const signalStatusEnum = pgEnum("signal_status", [
+  "new",
+  "active",
+  "acknowledged",
+  "resolved",
+  "suppressed",
+]);
 
 /**
  * A deterministic Layer 1 signal — no model call anywhere near this
@@ -68,18 +86,28 @@ export const signalStatusEnum = pgEnum("signal_status", ["active", "resolved"]);
  * proves — real rows, not prose. Reconciled on every detector run: a
  * still-true condition never duplicates its row, a no-longer-true one
  * gets resolved rather than left to rot as a stale claim.
+ *
+ * `severity` and `importance` are deliberately separate axes. Severity
+ * is how bad the technical breach is (how many days neglected, how close
+ * the deadline). Importance is how much this goal or pillar is supposed
+ * to matter — for a goal-scoped signal it's that goal's own priority;
+ * for a pillar-scoped one it's the highest priority among that pillar's
+ * active goals. A critical deadline miss on a priority-2 goal and a
+ * moderate neglect of a priority-5 goal are not the same problem, and
+ * Coach needs both numbers to rank them, not one blended score.
  */
 export const coachSignals = pgTable("coach_signals", {
   id: uuid("id").primaryKey().defaultRandom(),
   type: signalTypeEnum("type").notNull(),
   severity: signalSeverityEnum("severity").notNull(),
+  importance: integer("importance").notNull().default(3),
   categoryId: uuid("category_id")
     .notNull()
     .references(() => lifeCategories.id),
   goalId: uuid("goal_id"),
   detectedAt: timestamp("detected_at", { withTimezone: true }).notNull().defaultNow(),
   resolvedAt: timestamp("resolved_at", { withTimezone: true }),
-  status: signalStatusEnum("status").notNull().default("active"),
+  status: signalStatusEnum("status").notNull().default("new"),
   evidence: jsonb("evidence").notNull(),
   narrativeText: text("narrative_text"),
 });

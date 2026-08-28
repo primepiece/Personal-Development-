@@ -6,3 +6,4 @@ export * from "./ventures";
 export * from "./daily-actions";
 export * from "./daily-reviews";
 export * from "./scoring";
+export * from "./trajectory";

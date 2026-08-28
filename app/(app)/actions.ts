@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { lifeCategories } from "@/db/schema";
+import { coachSignals, lifeCategories } from "@/db/schema";
 import { createClient } from "@/lib/supabase/server";
 import { snapshotPillarScore } from "@/lib/scoring/compute";
 import { runSignalDetectors } from "@/lib/signals/detect";
@@ -37,6 +37,24 @@ export async function recomputeAllAction() {
     await snapshotPillarScore(category.id);
   }
 
+  revalidatePath("/");
+  revalidatePath("/pillars", "layout");
+}
+
+/** "I see it, still tracking it" — leaves the underlying condition free to resolve on its own later. */
+export async function acknowledgeSignalAction(formData: FormData) {
+  await requireUser();
+  const signalId = String(formData.get("signalId") ?? "");
+  await db.update(coachSignals).set({ status: "acknowledged" }).where(eq(coachSignals.id, signalId));
+  revalidatePath("/");
+  revalidatePath("/pillars", "layout");
+}
+
+/** "Stop showing me this" — stays quiet even if the condition is still true, or returns later. */
+export async function suppressSignalAction(formData: FormData) {
+  await requireUser();
+  const signalId = String(formData.get("signalId") ?? "");
+  await db.update(coachSignals).set({ status: "suppressed" }).where(eq(coachSignals.id, signalId));
   revalidatePath("/");
   revalidatePath("/pillars", "layout");
 }
