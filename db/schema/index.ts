@@ -7,3 +7,4 @@ export * from "./daily-actions";
 export * from "./daily-reviews";
 export * from "./scoring";
 export * from "./trajectory";
+export * from "./weekly-review";

@@ -7,6 +7,7 @@ const SCREENS = [
   { href: "/today", label: "Today" },
   { href: "/goals", label: "Goals" },
   { href: "/trajectory", label: "Trajectory" },
+  { href: "/weekly", label: "Weekly" },
   { href: "/timeline", label: "Timeline" },
   { href: "/coach", label: "Coach" },
 ] as const;
