@@ -9,3 +9,4 @@ export * from "./scoring";
 export * from "./trajectory";
 export * from "./weekly-review";
 export * from "./coach";
+export * from "./dogfood";

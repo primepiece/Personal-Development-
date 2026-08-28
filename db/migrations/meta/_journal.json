@@ -50,6 +50,13 @@
       "when": 1787886027439,
       "tag": "0006_lonely_bastion",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1787887265503,
+      "tag": "0007_wakeful_diamondback",
+      "breakpoints": true
     }
   ]
 }

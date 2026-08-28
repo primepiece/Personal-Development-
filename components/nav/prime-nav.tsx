@@ -10,6 +10,7 @@ const SCREENS = [
   { href: "/weekly", label: "Weekly" },
   { href: "/timeline", label: "Timeline" },
   { href: "/coach", label: "Coach" },
+  { href: "/dogfood", label: "Log" },
 ] as const;
 
 function isActive(pathname: string, href: string) {
