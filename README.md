@@ -4,14 +4,16 @@ A personal operating system, not a habit tracker. See the architecture doc
 for the full product design, data model, AI architecture and milestone plan
 this repo is being built against.
 
-## Current milestone: M0 + M1 — foundation, Vision → Standards → Goals
+## Current milestone: M0–M2 — foundation, Vision → Standards → Goals, Today
 
-No scoring, no AI, no Today/Trajectory/Timeline/Coach content yet — those
-are M2 onward. What's here has been verified end-to-end against a real
-local Postgres (schema push, seed, a full Vision → Standard →
-Milestone(age 25) → Annual → Quarterly → Monthly → Weekly chain, and the
-"why am I doing this?" upward trace) — it just hasn't touched *your*
-database yet, because only you can create the Supabase project.
+No scoring, no AI, no Trajectory/Timeline/Coach content yet — those are
+M3 onward. Everything here has been verified end-to-end against a real
+local Postgres — schema push, seed, a full Vision → Standard →
+Milestone(age 25) → Annual → Quarterly → Monthly → Weekly chain, and a
+full day through Today (Prime Actions, a logged recurring completion,
+an evening review, an edited review preserving its original in history)
+— it just hasn't touched *your* database yet, because only you can
+create the Supabase project.
 
 - **Nav:** `Prime` (home) · `Today` · `Goals` · `Trajectory` · `Timeline` ·
   `Coach` — desktop left rail, mobile bottom bar (see
@@ -29,15 +31,29 @@ database yet, because only you can create the Supabase project.
   - `vision_entries` (+ `vision_entry_history`) — one current Vision per
     pillar, edits snapshotted before they overwrite.
   - `standards` — standing rules per pillar, separate from goals.
-  - `goals` (+ `goal_history`, `goal_recurrence`, `behavior_completions`)
-    — the cascade: `milestone` (optionally age-anchored) → `annual` →
-    `quarterly` → `monthly` → `weekly`. `kind = 'behavior'` goals carry a
-    recurrence shape; the completion log and adherence math ship with
-    Today in M2.
+  - `goals` (+ `goal_history`, `goal_recurrence` / `goal_recurrence_history`,
+    `behavior_completions`) — the cascade: `milestone` (optionally
+    age-anchored) → `annual` → `quarterly` → `monthly` → `weekly`.
+  - `ventures` — named initiatives ("PrimeAI"), find-or-create by name,
+    optionally tagged onto a Prime Action.
+  - `daily_actions` — today's up-to-five. A `CHECK` constraint enforces
+    that every action either links to a weekly goal or is explicitly
+    marked standalone — going without a goal can never be a silent
+    default.
+  - `daily_reviews` (+ `daily_review_history`) — one review per day,
+    `raw_text` never touched by anything but you; edits snapshot the
+    prior version first.
   - Scoring, Trajectory, Timeline and Coach tables land in M3–M8.
-- **`/goals`** is both the first real feature and M0's database
-  verification in one place: once you're signed in against your own
-  Supabase project, it reads the seven pillars live from Postgres.
+- **`/goals`** is both the Vision/Standards/Goals feature and M0's
+  database verification in one place: once you're signed in against
+  your own Supabase project, it reads the seven pillars live from
+  Postgres.
+- **`/today`** is the core operating loop: pick ≤5 Prime Actions, log a
+  recurring commitment in one click (adherence % and streak computed
+  live from `lib/behavior/adherence.ts`), see a rules-based "Suggested"
+  list (`lib/today/suggestions.ts` — no model call, real counts only),
+  write the evening review, and read the deterministic Daily Summary
+  (`lib/today/summary.ts`) computed fresh from the day's actual rows.
 
 ## One-time setup (do this once, outside of this session)
 
