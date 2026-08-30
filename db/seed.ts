@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "@/lib/env";
 import { db } from "@/lib/db";
 import { lifeCategories } from "@/db/schema";
 
