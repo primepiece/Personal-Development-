@@ -12,9 +12,8 @@ import {
 } from "@/db/schema";
 import { createClient } from "@/lib/supabase/server";
 import { todayKey } from "@/lib/today/date";
+import { MAX_DAILY_ACTIONS } from "@/lib/today/constants";
 import { findOrCreateVenture } from "@/lib/ventures/find-or-create";
-
-const MAX_DAILY_ACTIONS = 5;
 
 async function requireUser() {
   const supabase = await createClient();

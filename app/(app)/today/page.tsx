@@ -13,11 +13,16 @@ import { computeAdherence } from "@/lib/behavior/adherence";
 import { getSuggestedActions } from "@/lib/today/suggestions";
 import { getDailySummary } from "@/lib/today/summary";
 import { todayKey } from "@/lib/today/date";
+import { getLatestMorningBrief, getMorningRecommendationReferences, getMorningRecommendations } from "@/lib/morning/query";
+import { runMorningBrief } from "@/lib/morning/run";
+import { resolveEvidenceLink } from "@/lib/coach/links";
 import { PrimeActions } from "./_components/prime-actions";
 import { SuggestedActions } from "./_components/suggested-actions";
 import { RecurringSection } from "./_components/recurring-section";
 import { ReviewForm } from "./_components/review-form";
 import { DailySummaryPanel } from "./_components/daily-summary";
+import { MorningBrief } from "./_components/morning-brief";
+import type { RecommendationCardData } from "./_components/recommendation-card";
 
 export default async function TodayPage() {
   const today = todayKey();
@@ -103,6 +108,48 @@ export default async function TodayPage() {
     })
     .filter((g): g is NonNullable<typeof g> => g !== null);
 
+  // Generate once per calendar day — if today already has a row (success
+  // or failure), reuse it so a refresh never produces a different answer
+  // or re-hits the model. See lib/morning/run.ts.
+  let morningBriefRow = await getLatestMorningBrief(today);
+  let morningRecs = morningBriefRow?.status === "ok" ? await getMorningRecommendations(morningBriefRow.id) : [];
+  if (!morningBriefRow) {
+    const generated = await runMorningBrief(today);
+    morningBriefRow = generated.brief;
+    morningRecs = generated.recommendations;
+  }
+
+  const categoryNameById = new Map(pillars.map((p) => [p.id, p.name]));
+  const morningRefs = await getMorningRecommendationReferences(morningRecs.map((r) => r.id));
+  const refsByRecommendation = new Map<string, typeof morningRefs>();
+  for (const ref of morningRefs) {
+    const list = refsByRecommendation.get(ref.recommendationId) ?? [];
+    list.push(ref);
+    refsByRecommendation.set(ref.recommendationId, list);
+  }
+
+  const recommendationCards: RecommendationCardData[] = await Promise.all(
+    morningRecs.map(async (rec) => {
+      const refs = refsByRecommendation.get(rec.id) ?? [];
+      const references = await Promise.all(
+        refs.map(async (ref) => ({
+          refTable: ref.refTable,
+          note: ref.note,
+          href: await resolveEvidenceLink(ref.refTable, ref.refId),
+        })),
+      );
+      return {
+        id: rec.id,
+        categoryName: categoryNameById.get(rec.categoryId) ?? "Unknown pillar",
+        title: rec.title,
+        reason: rec.reason,
+        status: rec.status,
+        editedTitle: rec.editedTitle,
+        references,
+      };
+    }),
+  );
+
   return (
     <div className="px-6 py-10 md:px-12 md:py-14">
       <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-text-faint">Today</p>
@@ -110,7 +157,15 @@ export default async function TodayPage() {
         What matters today?
       </h1>
 
-      <section className="mt-10">
+      <div className="mt-10">
+        <MorningBrief
+          status={morningBriefRow.status}
+          failureReason={morningBriefRow.failureReason}
+          recommendations={recommendationCards}
+        />
+      </div>
+
+      <section>
         <PrimeActions actions={actionRows} weeklyGoals={weeklyGoalOptions} pillars={pillars} />
         {suggestions.length > 0 && (
           <div className="mt-6">
