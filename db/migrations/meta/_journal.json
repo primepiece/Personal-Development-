@@ -57,6 +57,13 @@
       "when": 1787887265503,
       "tag": "0007_wakeful_diamondback",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1788207340247,
+      "tag": "0008_sweet_mongu",
+      "breakpoints": true
     }
   ]
 }
