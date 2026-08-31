@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { and, eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { lifeCategories, standards, visionEntries, goals } from "@/db/schema";
 import { GOAL_TIERS, requiredParentTier, type GoalTier } from "@/lib/goals/tiers";
@@ -36,7 +36,7 @@ export default async function CategoryPage({
   const allGoals = await db
     .select()
     .from(goals)
-    .where(eq(goals.categoryId, category.id))
+    .where(and(eq(goals.categoryId, category.id), ne(goals.status, "abandoned")))
     .orderBy(goals.title);
 
   const goalsByTier = new Map<GoalTier, typeof allGoals>();

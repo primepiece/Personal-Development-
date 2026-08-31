@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { eq, sql } from "drizzle-orm";
+import { eq, ne, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { goals, lifeCategories, visionEntries } from "@/db/schema";
 
@@ -16,6 +16,7 @@ export default async function GoalsIndexPage() {
   const goalCounts = await db
     .select({ categoryId: goals.categoryId, count: sql<number>`count(*)::int` })
     .from(goals)
+    .where(ne(goals.status, "abandoned"))
     .groupBy(goals.categoryId);
   const countByCategory = new Map(goalCounts.map((g) => [g.categoryId, g.count]));
 

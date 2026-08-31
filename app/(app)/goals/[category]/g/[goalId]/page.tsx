@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq, ne } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { goalRecurrence, goals, lifeCategories, trajectoryCheckpoints, trajectoryMetrics, visionEntries } from "@/db/schema";
 import { traceGoalChain } from "@/lib/goals/trace";
 import { TIER_LABEL, type GoalTier } from "@/lib/goals/tiers";
-import { toggleGoalDoneAction } from "@/app/(app)/goals/actions";
+import { retireGoalAction, toggleGoalDoneAction } from "@/app/(app)/goals/actions";
 import { computeMetricTrajectory } from "@/lib/trajectory/compute";
 import { formatMetricValue } from "@/lib/trajectory/format";
 
@@ -35,7 +35,7 @@ export default async function GoalDetailPage({
   const children = await db
     .select()
     .from(goals)
-    .where(eq(goals.parentGoalId, goal.id))
+    .where(and(eq(goals.parentGoalId, goal.id), ne(goals.status, "abandoned")))
     .orderBy(goals.title);
 
   const [recurrence] =
@@ -97,19 +97,34 @@ export default async function GoalDetailPage({
         <h1 className="font-display text-3xl font-semibold text-text-primary md:text-4xl">
           {goal.title}
         </h1>
-        <form action={toggleGoalDoneAction}>
-          <input type="hidden" name="goalId" value={goal.id} />
-          <button
-            type="submit"
-            className={`shrink-0 rounded-sm border px-3 py-1.5 font-mono text-[11px] ${
-              goal.status === "done"
-                ? "border-positive bg-positive text-text-on-accent"
-                : "border-border-strong text-text-primary"
-            }`}
-          >
-            {goal.status === "done" ? "✓ done — reopen" : "mark done"}
-          </button>
-        </form>
+        <div className="flex shrink-0 items-center gap-3">
+          {goal.status === "active" && (
+            <form action={retireGoalAction}>
+              <input type="hidden" name="goalId" value={goal.id} />
+              <button
+                type="submit"
+                className="font-mono text-[11px] text-text-faint hover:text-warning"
+              >
+                retire
+              </button>
+            </form>
+          )}
+          {goal.status !== "abandoned" && (
+            <form action={toggleGoalDoneAction}>
+              <input type="hidden" name="goalId" value={goal.id} />
+              <button
+                type="submit"
+                className={`rounded-sm border px-3 py-1.5 font-mono text-[11px] ${
+                  goal.status === "done"
+                    ? "border-positive bg-positive text-text-on-accent"
+                    : "border-border-strong text-text-primary"
+                }`}
+              >
+                {goal.status === "done" ? "✓ done — reopen" : "mark done"}
+              </button>
+            </form>
+          )}
+        </div>
       </div>
 
       <div className="mt-6 max-w-[62ch] rounded-sm border border-border bg-surface px-5 py-4">
@@ -125,7 +140,10 @@ export default async function GoalDetailPage({
       <dl className="mt-8 grid grid-cols-2 gap-x-8 gap-y-4 sm:grid-cols-3">
         <Field label="Kind" value={goal.kind} />
         <Field label="Priority" value={String(goal.priority)} />
-        <Field label="Status" value={goal.status} />
+        <Field
+          label="Status"
+          value={goal.status === "abandoned" ? "Retired" : goal.status}
+        />
         {goal.targetMetric && <Field label="Target metric" value={goal.targetMetric} />}
         {goal.targetValue !== null && (
           <Field label="Target value" value={String(goal.targetValue)} />

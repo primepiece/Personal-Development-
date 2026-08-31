@@ -121,7 +121,12 @@ export async function createGoalAction(formData: FormData) {
       .from(goals)
       .where(eq(goals.id, parentGoalIdRaw))
       .limit(1);
-    if (!parent || parent.tier !== expectedParentTier || parent.categoryId !== categoryId) {
+    if (
+      !parent ||
+      parent.tier !== expectedParentTier ||
+      parent.categoryId !== categoryId ||
+      parent.status === "abandoned"
+    ) {
       throw new Error(
         `The selected parent isn't a ${expectedParentTier} goal in this pillar.`,
       );
@@ -186,5 +191,33 @@ export async function toggleGoalDoneAction(formData: FormData) {
   revalidatePath(`/`);
 }
 
+/**
+ * Retiring an active goal — distinct from marking it done. Reuses the
+ * existing 'abandoned' status value (schema already had it, just never
+ * wired to anything) rather than inventing a new lifecycle concept.
+ * One-way via the UI, same as archiving a Standard: no "un-retire" button.
+ * The row itself is never touched otherwise — the id stays valid for
+ * every historical reference (daily_actions, coach_signals,
+ * trajectory_metrics.linkedGoalId, goal_history) that points at it.
+ */
+export async function retireGoalAction(formData: FormData) {
+  await requireUser();
+
+  const goalId = str(formData, "goalId");
+  const [goal] = await db.select().from(goals).where(eq(goals.id, goalId)).limit(1);
+  if (!goal) throw new Error("Goal not found.");
+  if (goal.status !== "active") {
+    throw new Error("Only an active goal can be retired.");
+  }
+
+  await db
+    .update(goals)
+    .set({ status: "abandoned", updatedAt: new Date() })
+    .where(eq(goals.id, goalId));
+
+  revalidatePath(`/goals`);
+  revalidatePath(`/`);
+}
+
 // goal_history is wired into the schema (db/schema/goals.ts) for when
-// full goal editing ships — this action only ever touches status.
+// full goal editing ships — these actions only ever touch status.
