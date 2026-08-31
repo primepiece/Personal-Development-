@@ -59,6 +59,18 @@ function describeError(err: unknown): string {
   return String(err);
 }
 
+/**
+ * Server-side only — never sends anything to the browser. Logs enough to
+ * tell the 5 known failure shapes apart (empty response, truncation,
+ * refusal, no parseable text block, malformed/schema-invalid JSON)
+ * without ever including the API key, other env values, or the full
+ * evidence bundle. `snippet` is capped and is model-generated text, not
+ * a secret — safe to log for diagnosing what actually came back.
+ */
+function logDiagnostic(category: string, details: Record<string, unknown>) {
+  console.error(`[morning-brief] ${category}`, details);
+}
+
 export type GenerateResult =
   | { ok: true; brief: MorningBrief; model: string }
   | { ok: false; reason: string; model: string };
@@ -68,6 +80,18 @@ export type GenerateResult =
  * path returns `ok: false` with a reason and nothing else — no partial
  * brief, no best-effort fallback. The caller persists the failure as an
  * audit row and never renders it as trusted recommendations.
+ *
+ * Uses `messages.create()` directly rather than the SDK's `.parse()`
+ * convenience wrapper: `.parse()` discards the raw `Message` (stop_reason,
+ * usage, content blocks) the moment its own internal JSON.parse or zod
+ * validation fails, collapsing every distinct failure mode into the same
+ * generic "Failed to parse structured output... Unexpected end of JSON
+ * input" — which is exactly what made an empty/truncated response
+ * indistinguishable from a genuinely malformed one. Calling `.create()`
+ * keeps the full response available so each case below can be told apart
+ * and logged accordingly; `zodOutputFormat(...).parse()` is still reused
+ * for the actual JSON+schema parsing, just called explicitly instead of
+ * implicitly.
  */
 export async function generateMorningBrief(
   bundle: MorningEvidenceBundle,
@@ -82,21 +106,31 @@ export async function generateMorningBrief(
     return { ok: false, reason: `client init failed: ${describeError(err)}`, model: MORNING_MODEL };
   }
 
+  const outputFormat = zodOutputFormat(morningBriefSchema);
+
   let response;
   try {
-    response = await client.messages.parse({
+    response = await client.messages.create({
       model: MORNING_MODEL,
-      max_tokens: 3000,
+      // Higher than a single-paragraph brief needs on its own: adaptive
+      // thinking draws from the same budget, and 3 full recommendation
+      // objects (each with its own evidence references) run heavier than
+      // this schema's word limits alone suggest.
+      max_tokens: 6000,
       thinking: { type: "adaptive" },
-      output_config: { effort: "high", format: zodOutputFormat(morningBriefSchema) },
+      output_config: { effort: "high", format: outputFormat },
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: buildUserContent(bundle) }],
     });
   } catch (err) {
+    logDiagnostic("api_call_failed", { message: describeError(err) });
     return { ok: false, reason: `model call failed: ${describeError(err)}`, model: MORNING_MODEL };
   }
 
+  const usage = { inputTokens: response.usage.input_tokens, outputTokens: response.usage.output_tokens };
+
   if (response.stop_reason === "refusal") {
+    logDiagnostic("refusal", { category: response.stop_details?.category ?? "unspecified", usage });
     return {
       ok: false,
       reason: `model refused: ${response.stop_details?.category ?? "unspecified category"}`,
@@ -104,13 +138,56 @@ export async function generateMorningBrief(
     };
   }
 
-  if (!response.parsed_output) {
-    return { ok: false, reason: "model output did not validate against the Morning Brief schema", model: MORNING_MODEL };
+  if (response.stop_reason === "max_tokens" || response.stop_reason === "model_context_window_exceeded") {
+    logDiagnostic("truncated", { stopReason: response.stop_reason, usage });
+    return {
+      ok: false,
+      reason: `model response was cut off before finishing (stop_reason: ${response.stop_reason}, ${usage.outputTokens} output tokens used) — the response was truncated, not malformed`,
+      model: MORNING_MODEL,
+    };
   }
 
-  const brief = response.parsed_output;
+  const textBlocks = response.content.filter((block) => block.type === "text");
+  if (textBlocks.length === 0) {
+    logDiagnostic("no_text_block", {
+      stopReason: response.stop_reason,
+      contentBlockTypes: response.content.map((b) => b.type),
+      usage,
+    });
+    return {
+      ok: false,
+      reason: `model response contained no text content block to parse (stop_reason: ${response.stop_reason}, block types: ${response.content.map((b) => b.type).join(", ") || "none"})`,
+      model: MORNING_MODEL,
+    };
+  }
+
+  const rawText = textBlocks[0].text;
+  if (!rawText || rawText.trim().length === 0) {
+    logDiagnostic("empty_response", { stopReason: response.stop_reason, usage });
+    return {
+      ok: false,
+      reason: `model returned an empty text response (stop_reason: ${response.stop_reason}, ${usage.outputTokens} output tokens used)`,
+      model: MORNING_MODEL,
+    };
+  }
+
+  let brief: MorningBrief;
+  try {
+    brief = outputFormat.parse(rawText);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    const isJsonSyntaxError = message.includes("as JSON");
+    logDiagnostic(isJsonSyntaxError ? "malformed_json" : "schema_validation_failed", {
+      message,
+      snippetLength: rawText.length,
+      snippet: rawText.slice(0, 500),
+    });
+    return { ok: false, reason: `structured output parsing failed: ${message}`, model: MORNING_MODEL };
+  }
+
   const validation = validateMorningBrief(brief, allowedRefs, allowedPillarIds, weeklyGoalCategoryById);
   if (!validation.ok) {
+    logDiagnostic("evidence_validation_failed", { reason: validation.reason });
     return { ok: false, reason: validation.reason, model: MORNING_MODEL };
   }
 
