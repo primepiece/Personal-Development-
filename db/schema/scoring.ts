@@ -41,7 +41,7 @@ export const categoryScores = pgTable("category_scores", {
   confidence: scoreConfidenceEnum("confidence").notNull(),
   trend: scoreTrendEnum("trend"),
   breakdown: jsonb("breakdown").notNull(),
-});
+}).enableRLS();
 
 export const signalTypeEnum = pgEnum("signal_type", [
   "priority_neglected",
@@ -110,7 +110,7 @@ export const coachSignals = pgTable("coach_signals", {
   status: signalStatusEnum("status").notNull().default("new"),
   evidence: jsonb("evidence").notNull(),
   narrativeText: text("narrative_text"),
-});
+}).enableRLS();
 
 /** One row per source record behind a signal's claim — the "why are you saying this" join target. */
 export const coachSignalReferences = pgTable("coach_signal_references", {
@@ -120,4 +120,4 @@ export const coachSignalReferences = pgTable("coach_signal_references", {
     .references(() => coachSignals.id),
   refTable: text("ref_table").notNull(),
   refId: uuid("ref_id").notNull(),
-});
+}).enableRLS();

@@ -67,7 +67,7 @@ export const goals = pgTable("goals", {
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}).enableRLS();
 
 /** Snapshot of a goal row written just before an edit overwrites it. */
 export const goalHistory = pgTable("goal_history", {
@@ -84,7 +84,7 @@ export const goalHistory = pgTable("goal_history", {
   replacedAt: timestamp("replaced_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}).enableRLS();
 
 /** The commitment shape for a kind='behavior' goal — "run 4x/week". */
 export const goalRecurrence = pgTable("goal_recurrence", {
@@ -93,7 +93,7 @@ export const goalRecurrence = pgTable("goal_recurrence", {
     .references(() => goals.id),
   period: recurrencePeriodEnum("period").notNull(),
   targetFrequency: integer("target_frequency").notNull(),
-});
+}).enableRLS();
 
 /**
  * Snapshot of a goal_recurrence row written just before an edit changes
@@ -112,7 +112,7 @@ export const goalRecurrenceHistory = pgTable("goal_recurrence_history", {
   replacedAt: timestamp("replaced_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}).enableRLS();
 
 /**
  * The actual completion log for a behavior goal. Adherence % and streak
@@ -133,4 +133,4 @@ export const behaviorCompletions = pgTable(
     source: text("source").notNull().default("manual"), // manual | daily_action | review_extracted
   },
   (table) => [unique("behavior_completions_goal_date").on(table.goalId, table.date)],
-);
+).enableRLS();

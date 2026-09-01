@@ -25,7 +25,7 @@ export const morningBriefs = pgTable("morning_briefs", {
   status: morningBriefStatusEnum("status").notNull(),
   failureReason: text("failure_reason"),
   evidenceBundle: jsonb("evidence_bundle").notNull(),
-});
+}).enableRLS();
 
 export const morningRecommendationStatusEnum = pgEnum("morning_recommendation_status", [
   "pending",
@@ -59,7 +59,7 @@ export const morningRecommendations = pgTable("morning_recommendations", {
   editedTitle: text("edited_title"),
   resultingActionId: uuid("resulting_action_id").references(() => dailyActions.id),
   decidedAt: timestamp("decided_at", { withTimezone: true }),
-});
+}).enableRLS();
 
 /** Same shape as coach_brief_references, applied to a recommendation instead of a brief. */
 export const morningRecommendationReferences = pgTable("morning_recommendation_references", {
@@ -70,4 +70,4 @@ export const morningRecommendationReferences = pgTable("morning_recommendation_r
   refTable: text("ref_table").notNull(),
   refId: uuid("ref_id").notNull(),
   note: text("note").notNull(),
-});
+}).enableRLS();

@@ -1,0 +1,27 @@
+ALTER TABLE "life_categories" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "vision_entries" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "vision_entry_history" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "standards" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "behavior_completions" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "goal_history" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "goal_recurrence" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "goal_recurrence_history" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "goals" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "ventures" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "daily_actions" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "daily_review_history" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "daily_reviews" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "category_scores" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "coach_signal_references" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "coach_signals" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "trajectory_checkpoints" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "trajectory_metrics" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "weekly_reflection_history" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "weekly_reflections" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "weekly_reviews" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "coach_brief_references" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "coach_briefs" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "morning_briefs" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "morning_recommendation_references" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "morning_recommendations" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "dogfood_log" ENABLE ROW LEVEL SECURITY;

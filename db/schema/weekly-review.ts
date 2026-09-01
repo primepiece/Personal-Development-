@@ -22,7 +22,7 @@ export const weeklyReviews = pgTable("weekly_reviews", {
   computedAt: timestamp("computed_at", { withTimezone: true }).notNull().defaultNow(),
   trajectoryState: text("trajectory_state").notNull(),
   snapshot: jsonb("snapshot").notNull(),
-});
+}).enableRLS();
 
 /**
  * The one current reflection per week — same current+history pattern as
@@ -38,7 +38,7 @@ export const weeklyReflections = pgTable("weekly_reflections", {
   whatLearned: text("what_learned").notNull().default(""),
   whatToChange: text("what_to_change").notNull().default(""),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}).enableRLS();
 
 export const weeklyReflectionHistory = pgTable("weekly_reflection_history", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -48,4 +48,4 @@ export const weeklyReflectionHistory = pgTable("weekly_reflection_history", {
   whatLearned: text("what_learned").notNull(),
   whatToChange: text("what_to_change").notNull(),
   replacedAt: timestamp("replaced_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}).enableRLS();

@@ -22,4 +22,4 @@ export const dogfoodLog = pgTable("dogfood_log", {
   note: text("note").notNull(),
   context: text("context"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}).enableRLS();

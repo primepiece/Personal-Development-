@@ -36,7 +36,7 @@ export const trajectoryMetrics = pgTable("trajectory_metrics", {
   baselineValue: doublePrecision("baseline_value"),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}).enableRLS();
 
 /**
  * Append-only. Nothing in this app ever updates or deletes a checkpoint
@@ -55,4 +55,4 @@ export const trajectoryCheckpoints = pgTable("trajectory_checkpoints", {
   source: text("source").notNull().default("manual"),
   note: text("note"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}).enableRLS();

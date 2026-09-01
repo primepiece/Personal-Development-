@@ -20,7 +20,7 @@ export const visionEntries = pgTable("vision_entries", {
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}).enableRLS();
 
 /**
  * A full snapshot of a vision_entries row written just before it's
@@ -39,4 +39,4 @@ export const visionEntryHistory = pgTable("vision_entry_history", {
   replacedAt: timestamp("replaced_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}).enableRLS();

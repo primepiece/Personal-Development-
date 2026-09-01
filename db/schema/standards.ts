@@ -18,4 +18,4 @@ export const standards = pgTable("standards", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}).enableRLS();

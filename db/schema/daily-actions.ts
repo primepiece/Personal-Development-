@@ -38,4 +38,4 @@ export const dailyActions = pgTable(
       sql`${table.linkedGoalId} is not null or ${table.isStandalone} = true`,
     ),
   ],
-);
+).enableRLS();

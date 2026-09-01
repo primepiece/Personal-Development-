@@ -12,4 +12,4 @@ export const ventures = pgTable("ventures", {
   name: text("name").notNull().unique(),
   status: text("status").notNull().default("active"), // active | sold | shut_down
   startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}).enableRLS();

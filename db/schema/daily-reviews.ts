@@ -16,7 +16,7 @@ export const dailyReviews = pgTable("daily_reviews", {
   dayRating: integer("day_rating"), // 1-10, optional
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}).enableRLS();
 
 export const dailyReviewHistory = pgTable("daily_review_history", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -25,4 +25,4 @@ export const dailyReviewHistory = pgTable("daily_review_history", {
   energyRating: integer("energy_rating"),
   dayRating: integer("day_rating"),
   replacedAt: timestamp("replaced_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}).enableRLS();

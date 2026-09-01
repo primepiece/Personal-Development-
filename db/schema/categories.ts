@@ -25,4 +25,4 @@ export const lifeCategories = pgTable("life_categories", {
   name: text("name").notNull(),
   sortOrder: integer("sort_order").notNull(),
   isActive: boolean("is_active").notNull().default(true),
-});
+}).enableRLS();

@@ -45,7 +45,7 @@ export const coachBriefs = pgTable("coach_briefs", {
   recommendation: text("recommendation"),
   nextWeekPriorities: jsonb("next_week_priorities"),
   confidence: text("confidence"),
-});
+}).enableRLS();
 
 /**
  * Same shape as coach_signal_references, applied to a new parent — one
@@ -61,4 +61,4 @@ export const coachBriefReferences = pgTable("coach_brief_references", {
   refTable: text("ref_table").notNull(),
   refId: uuid("ref_id").notNull(),
   note: text("note").notNull(),
-});
+}).enableRLS();

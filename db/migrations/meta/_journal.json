@@ -64,6 +64,13 @@
       "when": 1788207340247,
       "tag": "0008_sweet_mongu",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1788235816880,
+      "tag": "0009_easy_the_renegades",
+      "breakpoints": true
     }
   ]
 }

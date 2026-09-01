@@ -31,7 +31,19 @@ actually worth building next.
   selected states) — checked against WCAG AA, not eyeballed.
 - **Auth:** Supabase email magic-link, session refreshed in `proxy.ts`.
   Every route except `/login` and `/auth/callback` requires a signed-in
-  user.
+  user; if `OWNER_EMAIL` is set, any signed-in account that isn't that
+  exact address is signed out and redirected — this app has no per-user
+  data isolation (it's built for exactly one person), so that's the
+  backstop against a stray second Supabase account ever seeing anything.
+  The primary control is still disabling public signup in the Supabase
+  dashboard.
+- **RLS:** every table has Row Level Security enabled with zero policies
+  (`.enableRLS()` in each `db/schema/*.ts`), so Supabase's public REST
+  API (reachable by anyone with the publishable/anon key, which is
+  necessarily public — it ships in the browser bundle) returns zero rows
+  for every table. The app itself is unaffected: it only ever talks to
+  Postgres through `DATABASE_URL` directly (Drizzle, not the REST API),
+  using a role that bypasses RLS.
 - **Data:** Drizzle ORM against Supabase Postgres — `life_categories`
   (immutable pillar identity), `vision_entries`/`standards`/`goals` (the
   full milestone → annual → quarterly → monthly → weekly cascade),
