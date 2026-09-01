@@ -51,6 +51,14 @@ export async function updateSession(request: NextRequest) {
   // even if one gets created. No-ops if OWNER_EMAIL isn't set.
   const ownerEmail = process.env.OWNER_EMAIL;
   if (user && !isPublicPath && ownerEmail && user.email?.toLowerCase() !== ownerEmail.toLowerCase()) {
+    // Logged without either email value (server logs shouldn't carry
+    // PII) — the fact that it was THIS check, not a failed/missing
+    // session, is what makes an otherwise-identical "back at Sign In"
+    // symptom diagnosable instead of a guessing game.
+    console.warn(
+      "[proxy] signed-in session rejected: authenticated email does not match OWNER_EMAIL. " +
+        "If this fires unexpectedly, check OWNER_EMAIL in Vercel matches the Supabase account's email exactly.",
+    );
     await supabase.auth.signOut();
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
