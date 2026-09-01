@@ -108,6 +108,26 @@ export async function acceptSuggestionAction(formData: FormData) {
   revalidatePath("/today");
 }
 
+/**
+ * Retitling only — every other column (id, date, linkedGoalId, categoryId,
+ * status, completedAt, priority, source, ventureId) stays untouched, so
+ * the row's history and any evidence pointing at it (behavior_completions,
+ * coach signals, morning_recommendations.resultingActionId) stay valid.
+ */
+export async function editDailyActionAction(formData: FormData) {
+  await requireUser();
+  const actionId = str(formData, "actionId");
+  const title = str(formData, "title");
+  if (!title) throw new Error("An action needs a title.");
+
+  const [action] = await db.select().from(dailyActions).where(eq(dailyActions.id, actionId)).limit(1);
+  if (!action) throw new Error("That action no longer exists.");
+
+  await db.update(dailyActions).set({ title }).where(eq(dailyActions.id, actionId));
+
+  revalidatePath("/today");
+}
+
 export async function removeActionAction(formData: FormData) {
   await requireUser();
   const actionId = str(formData, "actionId");

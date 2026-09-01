@@ -1,9 +1,5 @@
-import Link from "next/link";
-import {
-  createDailyActionAction,
-  removeActionAction,
-  toggleActionStatusAction,
-} from "../actions";
+import { createDailyActionAction } from "../actions";
+import { ActionCard } from "./action-card";
 
 export type ActionRow = {
   id: string;
@@ -37,61 +33,25 @@ export function PrimeActions({
   pillars: PillarOption[];
 }) {
   const full = actions.length >= 5;
+  const doneCount = actions.filter((a) => a.status === "done").length;
 
   return (
     <div>
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="font-mono text-[11px] uppercase tracking-[0.1em] text-text-faint">
+          Today&apos;s Prime Actions
+        </h2>
+        <span className="font-mono text-[11px] text-text-faint">
+          {doneCount}/{actions.length}
+        </span>
+      </div>
+
       {actions.length === 0 ? (
-        <p className="text-[13.5px] text-text-faint">Nothing picked yet — what matters today?</p>
+        <p className="mt-4 text-[13.5px] text-text-faint">Nothing picked yet — what matters today?</p>
       ) : (
-        <ul className="flex flex-col gap-2">
+        <ul className="mt-4 flex flex-col gap-3">
           {actions.map((action) => (
-            <li
-              key={action.id}
-              className="flex items-start justify-between gap-4 rounded-sm border border-border bg-surface px-4 py-3"
-            >
-              <form action={toggleActionStatusAction} className="mt-0.5">
-                <input type="hidden" name="actionId" value={action.id} />
-                <button
-                  type="submit"
-                  aria-label={action.status === "done" ? "Mark not done" : "Mark done"}
-                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-sm border text-[11px] ${
-                    action.status === "done"
-                      ? "border-positive bg-positive text-text-on-accent"
-                      : "border-border-strong text-transparent"
-                  }`}
-                >
-                  ✓
-                </button>
-              </form>
-
-              <div className="min-w-0 flex-1">
-                <Link
-                  href={`/today/a/${action.id}`}
-                  className={`text-[14.5px] ${
-                    action.status === "done" ? "text-text-faint line-through" : "text-text-primary"
-                  } hover:text-accent`}
-                >
-                  {action.title}
-                </Link>
-                <p className="mt-1 flex flex-wrap gap-x-2 font-mono text-[11px] text-text-secondary">
-                  <span>{action.categoryName}</span>
-                  {action.linkedGoalTitle && <span>· {action.linkedGoalTitle}</span>}
-                  {action.isStandalone && <span className="text-warning">· standalone</span>}
-                  {action.ventureName && <span>· {action.ventureName}</span>}
-                  <span>· P{action.priority}</span>
-                  {action.source === "suggested" && <span>· suggested</span>}
-                </p>
-              </div>
-
-              {action.status === "pending" && (
-                <form action={removeActionAction}>
-                  <input type="hidden" name="actionId" value={action.id} />
-                  <button type="submit" className="font-mono text-[11px] text-text-faint hover:text-warning">
-                    remove
-                  </button>
-                </form>
-              )}
-            </li>
+            <ActionCard key={action.id} action={action} />
           ))}
         </ul>
       )}
@@ -102,7 +62,7 @@ export function PrimeActions({
         </p>
       ) : (
         <details className="mt-4">
-          <summary className="cursor-pointer font-mono text-[11px] uppercase tracking-[0.08em] text-text-faint">
+          <summary className="cursor-pointer py-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-text-faint">
             + add a Prime Action ({5 - actions.length} left)
           </summary>
           <form
@@ -111,7 +71,12 @@ export function PrimeActions({
           >
             <label className="flex flex-col gap-1 sm:col-span-2">
               <span className="field-label">Title</span>
-              <input name="title" required className="field-input" placeholder="Ship one onboarding screen" />
+              <input
+                name="title"
+                required
+                className="field-input py-2.5 text-[16px]"
+                placeholder="Ship one onboarding screen"
+              />
             </label>
 
             <label className="flex flex-col gap-1 sm:col-span-2">
@@ -156,13 +121,10 @@ export function PrimeActions({
 
             <label className="flex flex-col gap-1 sm:col-span-2">
               <span className="field-label">Venture / project (optional)</span>
-              <input name="ventureName" className="field-input" placeholder="PrimeAI" />
+              <input name="ventureName" className="field-input py-2.5 text-[16px]" placeholder="PrimeAI" />
             </label>
 
-            <button
-              type="submit"
-              className="btn-primary self-start sm:col-span-2"
-            >
+            <button type="submit" className="btn-primary self-start py-2.5 sm:col-span-2">
               Add
             </button>
           </form>
