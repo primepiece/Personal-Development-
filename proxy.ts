@@ -7,6 +7,10 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // manifest.webmanifest/icon/apple-icon are fetched directly by the
+    // browser/iOS (install prompt, home-screen icon lookup) without an
+    // authenticated session — they must stay reachable unauthenticated,
+    // same reasoning as favicon.ico below.
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|icon|apple-icon|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
