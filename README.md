@@ -36,12 +36,22 @@ actually worth building next.
   data isolation (it's built for exactly one person), so that's the
   backstop against a stray second Supabase account ever seeing anything.
   The primary control is still disabling public signup in the Supabase
-  dashboard. `/auth/callback` completes sign-in via `verifyOtp` against a
-  `token_hash` (needs no prior browser state — the only reliable way to
-  handle an emailed link that may be opened somewhere other than where it
-  was requested), with the older PKCE `code` exchange kept as a fallback.
-  Requires the Magic Link email template to actually send `token_hash` —
-  see production setup step 5.
+  dashboard. Sign-in requests the **implicit** flow specifically
+  (`lib/supabase/otp-client.ts`, a plain `@supabase/supabase-js` client —
+  `@supabase/ssr`'s browser client hardcodes PKCE with no override) so
+  the completed session comes back directly in the redirect URL's
+  fragment, needing no state stored from the request step at all. That's
+  deliberate, not incidental: an *emailed* link can't guarantee it's
+  opened in the same browser/app context it was requested from (Gmail's
+  own in-app browser, an installed PWA's isolated storage vs. regular
+  Safari, a different device), which is exactly what Supabase's default,
+  unmodified Magic Link template combined with PKCE can't tolerate — and
+  editing that template requires configuring custom SMTP, which this app
+  deliberately avoids. `app/auth/callback/page.tsx` completes it
+  client-side (`app/auth/callback/auth-callback-client.tsx` — fragments
+  are never sent to any server); `token_hash`/PKCE `code` handling is
+  kept server-side as a fallback in case the template or flow config
+  ever changes, but neither is reachable with the current setup.
 - **RLS:** every table has Row Level Security enabled with zero policies
   (`.enableRLS()` in each `db/schema/*.ts`), so Supabase's public REST
   API (reachable by anyone with the publishable/anon key, which is
@@ -105,32 +115,15 @@ URLs**, add:
 
 - `http://localhost:3000/auth/callback` (local dev)
 - `https://<your-vercel-domain>/auth/callback` (add this once you know
-  the domain from step 7 — you can come back and add it after deploying)
+  the domain from step 6 — you can come back and add it after deploying)
 
-### 5. Fix the Magic Link email template (required)
+Nothing to change under **Email Templates** — this app is built to work
+with Supabase's stock Magic Link template exactly as it ships (see the
+Auth bullet above for why: the app requests the implicit flow, which
+that default template already supports without modification). Do not
+enable custom SMTP just for this; it isn't needed.
 
-Supabase's *default* Magic Link template points at `{{ .ConfirmationURL }}`,
-which routes through Supabase's own `/auth/v1/verify` and comes back to
-`/auth/callback` as a PKCE `?code=`. That only works if the click happens
-in the exact same browser that requested the link — which an *emailed*
-link can't guarantee (tapped from the Gmail app's own in-app browser,
-handed off to Safari, opened on a different device, anything). Every
-other path fails with "PKCE code verifier not found in storage."
-
-`/auth/callback` handles this correctly (`verifyOtp` with `token_hash`,
-which needs no prior browser state at all) — but only once the template
-actually sends a `token_hash`. Supabase dashboard → **Authentication** →
-**Email Templates** → **Magic Link**, replace the link with:
-
-```html
-<a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=magiclink&next=/">Log in</a>
-```
-
-(`{{ .SiteURL }}` must match your Site URL setting in the same
-Authentication section — set that to `https://<your-vercel-domain>` once
-you have it from step 7.)
-
-### 6. Push the schema and seed the seven pillars
+### 5. Push the schema and seed the seven pillars
 
 Locally, with the three Supabase values (not the Anthropic key — the
 schema/seed scripts never call the model):
@@ -150,14 +143,15 @@ Confirm you can sign in and `/goals` shows the seven real pillars before
 moving on — this is the same check M0 verified against a local database;
 now it's verifying your actual production one.
 
-### 7. Deploy to Vercel
+### 6. Deploy to Vercel
 
 1. [vercel.com](https://vercel.com) → **Add New… → Project** → import
    this GitHub repo.
 2. Vercel auto-detects Next.js; leave the build command as `npm run
    build`.
-3. **Environment Variables** — add all four: `NEXT_PUBLIC_SUPABASE_URL`,
-   `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `DATABASE_URL`, `ANTHROPIC_API_KEY`.
+3. **Environment Variables** — add `NEXT_PUBLIC_SUPABASE_URL`,
+   `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `DATABASE_URL`, `ANTHROPIC_API_KEY`,
+   and `OWNER_EMAIL` (your own sign-in email — see the Auth bullet above).
 4. Deploy. Note the resulting domain (`your-app.vercel.app` or a custom
    one).
 5. Go back to step 4 and add `https://<that-domain>/auth/callback` to

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { createOtpRequestClient } from "@/lib/supabase/otp-client";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -12,7 +12,11 @@ export default function LoginPage() {
   async function sendLink(e: React.FormEvent) {
     e.preventDefault();
     setStatus("sending");
-    const supabase = createClient();
+    // Implicit flow deliberately, not the app's regular (PKCE) browser
+    // client — see lib/supabase/otp-client.ts for why: the default,
+    // uneditable Supabase Magic Link template can only produce a link
+    // that redirects with the flow type this exact request specifies.
+    const supabase = createOtpRequestClient();
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
