@@ -14,6 +14,13 @@ import { createClient } from "@/lib/supabase/client";
 type Diagnostics = {
   hashPresent: boolean;
   hashParamKeys: string[];
+  // error/error_code/error_description are GoTrue's own error metadata —
+  // an enum-like code and a human-readable description, never a
+  // credential — safe to show. Still never access_token/refresh_token/
+  // provider_token or anything else from the fragment.
+  hashError: string | null;
+  hashErrorCode: string | null;
+  hashErrorDescription: string | null;
   sessionFound: boolean;
   sessionUserIdPrefix: string | null;
   sessionError: string | null;
@@ -40,9 +47,8 @@ export function AuthCallbackClient({ next }: { next: string }) {
     async function completeSession() {
       const rawHash = window.location.hash;
       const hashPresent = rawHash.length > 1;
-      const hashParamKeys = hashPresent
-        ? Array.from(new URLSearchParams(rawHash.substring(1)).keys())
-        : [];
+      const hashParams = hashPresent ? new URLSearchParams(rawHash.substring(1)) : null;
+      const hashParamKeys = hashParams ? Array.from(hashParams.keys()) : [];
 
       const supabase = createClient();
       const { data, error } = await supabase.auth.getSession();
@@ -56,6 +62,9 @@ export function AuthCallbackClient({ next }: { next: string }) {
       const diag: Diagnostics = {
         hashPresent,
         hashParamKeys,
+        hashError: hashParams?.get("error") ?? null,
+        hashErrorCode: hashParams?.get("error_code") ?? null,
+        hashErrorDescription: hashParams?.get("error_description") ?? null,
         sessionFound: !!data.session,
         sessionUserIdPrefix: data.session ? data.session.user.id.slice(0, 8) : null,
         sessionError: error?.message ?? null,
@@ -111,6 +120,9 @@ export function AuthCallbackClient({ next }: { next: string }) {
             </p>
             <p>hash present: {String(diagnostics.hashPresent)}</p>
             <p>hash param keys: {diagnostics.hashParamKeys.join(", ") || "(none)"}</p>
+            <p>error: {diagnostics.hashError ?? "(none)"}</p>
+            <p>error_code: {diagnostics.hashErrorCode ?? "(none)"}</p>
+            <p>error_description: {diagnostics.hashErrorDescription ?? "(none)"}</p>
             <p>session found: {String(diagnostics.sessionFound)}</p>
             <p>session user id (first 8 chars): {diagnostics.sessionUserIdPrefix ?? "(none)"}</p>
             <p>session error: {diagnostics.sessionError ?? "(none)"}</p>
