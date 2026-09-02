@@ -29,7 +29,17 @@ export async function updateSession(request: NextRequest) {
 
   const {
     data: { user },
+    error: getUserError,
   } = await supabase.auth.getUser();
+
+  // TEMPORARY DIAGNOSTIC — see the auth-loop investigation. Cookie
+  // *names* only (never values — an sb-*-auth-token cookie's value IS
+  // the session, access token included). Remove once root-caused.
+  const incomingCookieNames = request.cookies.getAll().map((c) => c.name);
+  console.warn(
+    `[proxy] ${request.nextUrl.pathname} — cookies: [${incomingCookieNames.join(", ") || "none"}] — ` +
+      `user: ${user ? "found" : "none"}${getUserError ? ` — getUser error: ${getUserError.message}` : ""}`,
+  );
 
   const isPublicPath = PUBLIC_PATHS.some((path) =>
     request.nextUrl.pathname.startsWith(path),
