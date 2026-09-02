@@ -21,6 +21,8 @@ type Diagnostics = {
   hashError: string | null;
   hashErrorCode: string | null;
   hashErrorDescription: string | null;
+  setSessionCalled: boolean;
+  setSessionError: string | null;
   sessionFound: boolean;
   sessionUserIdPrefix: string | null;
   sessionError: string | null;
@@ -28,14 +30,29 @@ type Diagnostics = {
 };
 
 /**
- * Completes an implicit-flow magic-link sign-in. Supabase redirected here
- * with the session in the URL fragment (#access_token=...&refresh_token=...)
- * — never sent to any server, only readable by this page's own JS.
+ * Completes an implicit-flow magic-link sign-in via an EXPLICIT
+ * setSession() call, not detectSessionInUrl's automatic detection.
  *
- * detectSessionInUrl (on by default on @supabase/ssr's browser client)
- * reads that fragment during the client's own initialization and persists
- * the session via the same cookie-backed storage every other request in
- * this app reads from. getSession() awaits that initialization internally.
+ * Root cause, confirmed by reading the installed auth-js source directly:
+ * detectSessionInUrl's internal _getSessionFromURL() correctly identifies
+ * an implicit-flow fragment, then immediately throws
+ * `AuthPKCEGrantCodeExchangeError('Not a valid PKCE flow url.')` because
+ * it also checks `this.flowType === 'pkce'` — and @supabase/ssr's
+ * createBrowserClient hardcodes flowType: "pkce" with no override, on
+ * every client it creates, including this callback page's own. That
+ * error is swallowed inside _initialize() (which by its own doc comment
+ * "never throws"), so getSession() silently returns no session with no
+ * error — which is exactly what production showed.
+ *
+ * setSession({ access_token, refresh_token }) has no such flowType gate
+ * (confirmed in source: _setSession() only checks the two tokens are
+ * present, then persists via the same this.storage/this.storageKey every
+ * other request in this app reads from — the same cookie-backed adapter,
+ * unaffected by the flowType mismatch above). So: extract the two tokens
+ * ourselves from the fragment (never anything else from it), strip the
+ * fragment immediately, and call setSession() explicitly instead of
+ * relying on the auto-detection path that this SSR client can't use for
+ * an implicit-flow URL.
  */
 export function AuthCallbackClient({ next }: { next: string }) {
   const [status, setStatus] = useState<"working" | "ready" | "error">("working");
@@ -50,8 +67,36 @@ export function AuthCallbackClient({ next }: { next: string }) {
       const hashParams = hashPresent ? new URLSearchParams(rawHash.substring(1)) : null;
       const hashParamKeys = hashParams ? Array.from(hashParams.keys()) : [];
 
+      const hashError = hashParams?.get("error") ?? null;
+      const hashErrorCode = hashParams?.get("error_code") ?? null;
+      const hashErrorDescription = hashParams?.get("error_description") ?? null;
+
+      // Extract only what setSession() needs, then immediately strip the
+      // fragment from the visible URL/history — before any network call,
+      // so the tokens sit exposed there for as little time as possible.
+      const accessToken = hashParams?.get("access_token") ?? null;
+      const refreshToken = hashParams?.get("refresh_token") ?? null;
+      if (hashPresent) {
+        window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
+      }
+
       const supabase = createClient();
-      const { data, error } = await supabase.auth.getSession();
+
+      let setSessionCalled = false;
+      let setSessionError: string | null = null;
+
+      if (!hashError && accessToken && refreshToken) {
+        setSessionCalled = true;
+        const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+        setSessionError = error?.message ?? null;
+      }
+      if (cancelled) return;
+
+      // Independent verification, per the trace request: confirm
+      // getSession() now reports the session that setSession() just
+      // persisted, rather than trusting setSession()'s own return value
+      // alone.
+      const { data, error: getSessionErr } = await supabase.auth.getSession();
       if (cancelled) return;
 
       const cookieNames = document.cookie
@@ -62,18 +107,20 @@ export function AuthCallbackClient({ next }: { next: string }) {
       const diag: Diagnostics = {
         hashPresent,
         hashParamKeys,
-        hashError: hashParams?.get("error") ?? null,
-        hashErrorCode: hashParams?.get("error_code") ?? null,
-        hashErrorDescription: hashParams?.get("error_description") ?? null,
+        hashError,
+        hashErrorCode,
+        hashErrorDescription,
+        setSessionCalled,
+        setSessionError,
         sessionFound: !!data.session,
         sessionUserIdPrefix: data.session ? data.session.user.id.slice(0, 8) : null,
-        sessionError: error?.message ?? null,
+        sessionError: getSessionErr?.message ?? null,
         cookieNames,
       };
       setDiagnostics(diag);
       console.log("[auth/callback diagnostics]", diag);
 
-      if (error || !data.session) {
+      if (!data.session) {
         setStatus("error");
         return;
       }
@@ -123,9 +170,11 @@ export function AuthCallbackClient({ next }: { next: string }) {
             <p>error: {diagnostics.hashError ?? "(none)"}</p>
             <p>error_code: {diagnostics.hashErrorCode ?? "(none)"}</p>
             <p>error_description: {diagnostics.hashErrorDescription ?? "(none)"}</p>
-            <p>session found: {String(diagnostics.sessionFound)}</p>
+            <p>setSession() called: {String(diagnostics.setSessionCalled)}</p>
+            <p>setSession() error: {diagnostics.setSessionError ?? "(none)"}</p>
+            <p>session found (after setSession): {String(diagnostics.sessionFound)}</p>
             <p>session user id (first 8 chars): {diagnostics.sessionUserIdPrefix ?? "(none)"}</p>
-            <p>session error: {diagnostics.sessionError ?? "(none)"}</p>
+            <p>getSession() error: {diagnostics.sessionError ?? "(none)"}</p>
             <p>cookie names present: {diagnostics.cookieNames.join(", ") || "(none)"}</p>
           </div>
         )}
